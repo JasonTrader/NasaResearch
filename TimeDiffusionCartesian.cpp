@@ -27,7 +27,7 @@ int main(){
   cin >> ndx;
   ldx = lx/ndx;
   double tleft, tright;
-  cout << "What is the teperature of the left boundary of the rod for all time? ";
+  cout << "What is the teperature of the left boundary of the rod initially? ";
   cin >> tleft;
   cout << "What is the teperature of the right boundary of the rod for all time? ";
   cin >> tright;
@@ -55,7 +55,7 @@ int main(){
   int tcount = 0;
   do{
     tcount++;
-    cout << newt[0] << " ";
+    oldt[0] = newt[0];
     for(int i = 1; i < (ndx + 1); i++){
       oldt[i] = newt[i];
       newt[i] = -2*oldt[i];
@@ -63,8 +63,11 @@ int main(){
       newt[i] += oldt[i - 1];
       newt[i] *= (difus*tstep/(ldx*ldx));
       newt[i] += oldt[i];
+      if(i == 1)
+        cout << newt[i] << " ";
       cout << newt[i] << " ";
     }
+    newt[0] = newt[1];
     cout << newt[ndx + 1] << endl;
   } while(!steadyState(oldt, newt, thresh, ndx));
   cout << "\n---------------------------------\n";
