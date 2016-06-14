@@ -27,9 +27,9 @@ int main(){
   cin >> ndx;
   ldx = lx/ndx;
   double tleft, tright;
-  cout << "What is the teperature of the left side of the rod for all time? ";
+  cout << "What is the teperature of the left boundary of the rod for all time? ";
   cin >> tleft;
-  cout << "What is the teperature of the right side of the rod for all time? ";
+  cout << "What is the teperature of the right boundary of the rod for all time? ";
   cin >> tright;
   cout << "what is your diffusivity constant? ";
   double difus;
@@ -37,26 +37,26 @@ int main(){
   cout << "What is you time step? (Must be smaller than " << (ldx*ldx)/(2*difus) << "s to ensure stability) " ;
   double tstep;
   cin >> tstep;
-  cout << "What must the average change be to consider the solution as steady? ";
+  cout << "What must the maximum change be to consider the solution as steady? ";
   double thresh;
   cin >> thresh;
   cout << "Initial conditions\n-----------------------" << endl;
-  double oldt [ndx];
-  double newt[ndx];
+  double oldt [ndx + 2];
+  double newt[ndx + 2];
   oldt[0] = tleft;
-  oldt[ndx - 1] = tright;
+  oldt[ndx + 1] = tright;
   newt[0] = tleft;
-  newt[ndx - 1] = tright;
+  newt[ndx + 1] = tright;
 
-  for(int inc = 1; inc < ndx - 1; inc++){
+  for(int inc = 1; inc < ndx + 1; inc++){
     cout << "Segemt " << inc << ": ";
     cin >> newt[inc];
   }
   int tcount = 0;
   do{
     tcount++;
-    cout << oldt[0] << " ";
-    for(int i = 1; i < (ndx - 1); i++){
+    cout << newt[0] << " ";
+    for(int i = 1; i < (ndx + 1); i++){
       oldt[i] = newt[i];
       newt[i] = -2*oldt[i];
       newt[i] += oldt[i + 1];
@@ -65,7 +65,7 @@ int main(){
       newt[i] += oldt[i];
       cout << newt[i] << " ";
     }
-    cout << oldt[ndx - 1] << endl;
+    cout << newt[ndx + 1] << endl;
   } while(!steadyState(oldt, newt, thresh, ndx));
   cout << "\n---------------------------------\n";
   cout << "Solution converged in " << tcount * tstep << " seconds\n";
