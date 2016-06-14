@@ -4,7 +4,7 @@ using namespace std;
 
 
 bool steadyState(double oldt[], double newt[], double thresh, int ndx){
-  double totThresh = ndx*thresh;
+  double totThresh = (ndx-2)*thresh;
   double sum = 0;
   for(int i = 1; i < ndx - 1; i++){
     double temp = newt[i] - oldt[i];
@@ -51,17 +51,20 @@ int main(){
     cin >> oldt[inc];
   }
   int tcount = 0;
-  while(!steadyState(oldt, newt, thresh, ndx)){
+  do{
     tcount++;
+    cout << oldt[0] << " ";
     for(int i = 1; i < (ndx - 1); i++){
       newt[i] = -2*oldt[i];
       newt[i] += oldt[i + 1];
       newt[i] += oldt[i - 1];
       newt[i] *= (difus*tstep/(ldx*ldx));
       newt[i] += oldt[i];
+      cout << oldt[i] << " ";
       oldt[i] = newt[i];
     }
-  }
+    cout << oldt[ndx - 1] << endl;
+  } while(!steadyState(oldt, newt, thresh, ndx));
   cout << "\n---------------------------------\n";
   cout << "Solution converged in " << tcount * tstep << " seconds\n";
 }
