@@ -7,12 +7,14 @@ bool steadyState(double oldt[], double newt[], double thresh, int ndx){
   double totThresh = (ndx-2)*thresh;
   double sum = 0;
   for(int i = 1; i < ndx - 1; i++){
-    double temp = newt[i] - oldt[i];
-    if (temp < 0)
-      temp *= -1;
-    sum += temp;
+    double diff = newt[i] - oldt[i];
+    if (diff < 0)
+      diff *= -1;
+    //sum += temp;
+    if (diff > thresh)
+      return(0);
   }
-  return (sum < totThresh);
+  return (1);
 }
 
 int main(){
@@ -29,7 +31,7 @@ int main(){
   cin >> tleft;
   cout << "What is the teperature of the right side of the rod for all time? ";
   cin >> tright;
-  cout << "what is your diffusitivity constant? ";
+  cout << "what is your diffusivity constant? ";
   double difus;
   cin >> difus;
   cout << "What is you time step? (Must be smaller than " << (ldx*ldx)/(2*difus) << "s to ensure stability) " ;
@@ -61,7 +63,7 @@ int main(){
       newt[i] += oldt[i - 1];
       newt[i] *= (difus*tstep/(ldx*ldx));
       newt[i] += oldt[i];
-      cout << oldt[i] << " ";
+      cout << newt[i] << " ";
     }
     cout << oldt[ndx - 1] << endl;
   } while(!steadyState(oldt, newt, thresh, ndx));
