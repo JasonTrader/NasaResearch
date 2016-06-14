@@ -52,12 +52,15 @@ int main(){
     cout << "Segemt " << inc << ": ";
     cin >> newt[inc];
   }
+
+
   int tcount = 0;
   do{
     tcount++;
-    oldt[0] = newt[0];
-    for(int i = 1; i < (ndx + 1); i++){
+    for(int i = 0; i < (ndx + 1); i++){
       oldt[i] = newt[i];
+    }
+    for(int i = 1; i < (ndx + 1); i++){
       newt[i] = -2*oldt[i];
       newt[i] += oldt[i + 1];
       newt[i] += oldt[i - 1];
