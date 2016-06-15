@@ -103,7 +103,7 @@ int main(){
       mat[counter][counter + 1] = 1+(1/(2*i));
     }
     if(i == 1){
-      mat[counter][matNum] -= (1-(1/(2*i)))*grid[0][j];
+      mat[counter][counter] += 0.5;
     }
     else{
       mat[counter][counter - 1] = 1-(1/(2*i));
@@ -120,7 +120,7 @@ int main(){
     else{
       mat[counter][counter - (nr - 1)] = vert_aug;
     }
-    mat[counter][counter] = -1*((2*vert_aug) + 2);
+    mat[counter][counter] += -1*((2*vert_aug) + 2);
   }
   //solve matrix
   //forward
