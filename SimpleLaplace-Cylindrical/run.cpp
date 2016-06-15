@@ -4,23 +4,23 @@
 using namespace std;
 #define PI 3.14159265359
 
-int getPos(int i, int j, int nx){
-  return (((j-1) * (nx -1)) + i) - 1;
+int getPos(int i, int j, int nr){
+  return (((j-1) * (nr -1)) + i) - 1;
 }
 
-double getQ(int n, double temp, double lx, double ly){
+double getQ(int n, double temp, double lr, double lz){
   double res = cos(n*PI);
   res -= 1;
-  res /= sinh(lx*n*PI/ly);
+  res /= sinh(lr*n*PI/lz);
   res *= -2*temp;
   res /= (n*PI);
   return res;
 }
 
-double getT(double x, double y, double lx, double ly, double temp){
+double getT(double x, double y, double lr, double lz, double temp){
   double sum = 0;
   for(int n = 1; n<97; n++){
-    sum += getQ(n, temp, lx, ly)*sinh(n*PI*x/ly)*sin(n*PI*y/ly);
+    sum += getQ(n, temp, lr, lz)*sinh(n*PI*x/lz)*sin(n*PI*y/lz);
   }
   return sum;
 }
@@ -46,82 +46,81 @@ int main(){
   cin >> tleft;
   cout << "Temperature of right side: ";
   cin >> tright;
-  int nx, ny;
-  double lx, ly;
+  int nr, nz;
+  double lr, lz;
   cout << "Number of segments in x: ";
-  cin >> nx;
+  cin >> nr;
   cout << "Number of segments in y: ";
-  cin >> ny;
+  cin >> nz;
   cout << "Length of x: ";
-  cin >> lx;
+  cin >> lr;
   cout << "Length of y: ";
-  cin >> ly;
-  double lnx = lx/nx;
-  double lny = ly/ny;
-  double grid[nx + 1][ny + 1];
-  double error[nx + 1][ny + 1];
-  double percerror[nx + 1][ny + 1];
+  cin >> lz;
+  double lnr = lr/nr;
+  double lnz = lz/nz;
+  double grid[nr + 1][nz + 1];
+  double error[nr + 1][nz + 1];
+  double percerror[nr + 1][nz + 1];
   //initialize grid with initial conditions
-  for(int i = 0; i< nx + 1; i++){
+  for(int i = 0; i< nr + 1; i++){
     grid[i][0] = tbot;
-    grid[i][ny] = ttop;
+    grid[i][nz] = ttop;
     error[i][0] = 0;
-    error[i][ny] = 0;
+    error[i][nz] = 0;
     percerror[i][0] = 0;
-    percerror[i][ny] = 0;
+    percerror[i][nz] = 0;
   }
-  for(int j = 0; j< ny + 1; j++){
-    grid[nx][j] = tright;
+  for(int j = 0; j< nz + 1; j++){
+    grid[nr][j] = tright;
     grid[0][j] = tleft;
-    error[nx][j] = 0;
+    error[nr][j] = 0;
     error[0][j] = 0;
-    percerror[nx][j] = 0;
+    percerror[nr][j] = 0;
     percerror[0][j] = 0;
   }
 
 
-  int matNum = nx - 1;
-  matNum *= (ny -1);
+  int matNum = nr - 1;
+  matNum *= (nz -1);
   double mat[matNum][matNum + 1];
 
   int counter = matNum;
-  double aug = lnx / lny;
-  aug *= aug;
+  double vert_aug = lnr*lnr/(lnz*lnz);
 
   while(counter --> 0){
-    int j = (counter / (nx-1)) + 1;
-    int i = (counter % (nx-1)) + 1;
+    int j = (counter / (nr-1)) + 1;
+    int i = (counter % (nr-1)) + 1;
     //zero out matrix
     for(int q = 0; q< (matNum + 1); q++){
       mat[counter][q] = 0;
     }
 
     //fill matrix
-    if(i == (nx - 1)){
-      mat[counter][matNum] -= grid[nx][j];
+    if(i == (nr - 1)){
+      mat[counter][matNum] -= (1+(1/(2*i)))*grid[nr][j];
     }
     else{
-      mat[counter][counter] + 1] = 1;
+      mat[counter][counter + 1] = 1+(1/(2*i));
     }
     if(i == 1){
-      mat[counter][matNum] -= grid[0][j];
+      mat[counter][matNum] -= (1-(1/(2*i)))*grid[0][j];
     }
     else{
-      mat[counter][counter - 1] = 1;
+      mat[counter][counter - 1] = 1-(1/(2*i));
     }
-    if(j == (ny - 1)){
-      mat[counter][matNum] -= (aug * grid[i][ny]);
+    if(j == (nz - 1)){
+      mat[counter][matNum] -= (vert_aug * grid[i][nz]);
     }
     else{
-      mat[counter][counter + (nx - 1)] = aug;
+      mat[counter][counter + (nr - 1)] = vert_aug;
     }
     if(j == 1){
-      mat[counter][matNum] -= (aug * grid[i][0]);
+      mat[counter][matNum] -= (vert_aug * grid[i][0]);
     }
     else{
-      mat[counter][counter - (nx - 1)] = aug;
+      mat[counter][counter - (nr - 1)] = vert_aug;
     }
-    mat[counter][counter] = -1*((2*aug) + 2);
+    mat[counter][counter] = -1*((2*vert_aug) + 2);
   }
   //solve matrix
   //forward
@@ -150,10 +149,10 @@ int main(){
   }
 
   //fill grid
-  for(int i = 1; i< nx; i++){
-    for(int j = 1; j< ny; j++){
-      grid[i][j] = mat[getPos(i, j, nx)][matNum];
-      double actual = getT(i*lnx, j*lny, lx, ly, findMaxTemp(tleft, tright, ttop, tbot));
+  for(int i = 1; i< nr; i++){
+    for(int j = 1; j< nz; j++){
+      grid[i][j] = mat[getPos(i, j, nr)][matNum];
+      double actual = getT(i*lnr, j*lnz, lr, lz, findMaxTemp(tleft, tright, ttop, tbot));
       error[i][j] = grid[i][j] - actual;
       if(error[i][j] < 0){
         error[i][j] *= -1;
@@ -175,8 +174,8 @@ int main(){
   cout << "\n-----------------" << endl;
   cout << "Final Results:" << endl;
   //see grid
-  for(int j = ny; j> -1 ; j--){
-    for(int i = 0; i< nx + 1; i++){
+  for(int j = nz; j> -1 ; j--){
+    for(int i = 0; i< nr + 1; i++){
       cout << setprecision(3) << grid[i][j] << "\t";
     }
     cout << endl;
@@ -185,8 +184,8 @@ int main(){
   cout << "\n-----------------" << endl;
   cout << "Error:" << endl;
   //see grid
-  for(int j = ny; j> -1 ; j--){
-    for(int i = 0; i< nx + 1; i++){
+  for(int j = nz; j> -1 ; j--){
+    for(int i = 0; i< nr + 1; i++){
       cout << setprecision(3) << error[i][j] << "\t";
     }
     cout << endl;
@@ -195,8 +194,8 @@ int main(){
   cout << "\n-----------------" << endl;
   cout << "Percent Error:" << endl;
   //see grid
-  for(int j = ny; j> -1 ; j--){
-    for(int i = 0; i< nx + 1; i++){
+  for(int j = nz; j> -1 ; j--){
+    for(int i = 0; i< nr + 1; i++){
       cout << setprecision(2) << percerror[i][j] << "\t";
     }
     cout << endl;
