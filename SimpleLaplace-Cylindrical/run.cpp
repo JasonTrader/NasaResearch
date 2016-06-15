@@ -174,8 +174,8 @@ int main(){
   cout << "\n-----------------" << endl;
   cout << "Final Results:" << endl;
   //see grid
-  for(int j = nz; j> -1 ; j--){
-    for(int i = 0; i< nr + 1; i++){
+  for(int i = 0; i< nr + 1; i++){
+    for(int j = 0; j < nr + 1 ; j++){
       cout << setprecision(3) << grid[i][j] << "\t";
     }
     cout << endl;
@@ -184,8 +184,8 @@ int main(){
   cout << "\n-----------------" << endl;
   cout << "Error:" << endl;
   //see grid
-  for(int j = nz; j> -1 ; j--){
-    for(int i = 0; i< nr + 1; i++){
+  for(int i = 0; i< nr + 1; i++){
+    for(int j = 0; j < nr + 1 ; j++){
       cout << setprecision(3) << error[i][j] << "\t";
     }
     cout << endl;
@@ -194,8 +194,8 @@ int main(){
   cout << "\n-----------------" << endl;
   cout << "Percent Error:" << endl;
   //see grid
-  for(int j = nz; j> -1 ; j--){
-    for(int i = 0; i< nr + 1; i++){
+  for(int i = 0; i< nr + 1; i++){
+    for(int j = 0; j < nr + 1 ; j++){
       cout << setprecision(2) << percerror[i][j] << "\t";
     }
     cout << endl;
