@@ -4,7 +4,7 @@ using namespace std;
 
 
 bool steadyState(double oldt[], double newt[], double thresh, int ndx){
-  double totThresh = (ndx-2)*thresh;
+//  double totThresh = (ndx-2)*thresh;
   double sum = 0;
   for(int i = 1; i < ndx - 1; i++){
     double diff = newt[i] - oldt[i];
