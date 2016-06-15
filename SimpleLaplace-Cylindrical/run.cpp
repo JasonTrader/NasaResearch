@@ -25,23 +25,23 @@ double getT(double x, double y, double lr, double lz, double temp){
   return sum;
 }
 
-double findMaxTemp(double tleft, double tright, double ttop, double tbottom){
+double findMaxTemp(double tleft, double tright, double tout, double tcent){
   double max = tleft;
   if(tright > max)
     max = tright;
-  if(ttop > max)
-    max = ttop;
-  if(tbottom > max)
-    max = tbottom;
+  if(tout > max)
+    max = tout;
+  if(tcent > max)
+    max = tcent;
   return max;
 }
 
 int main(){
-  double tbot, ttop, tleft, tright;
-  cout << "Temperature of bottom side: ";
-  cin >> tbot;
-  cout << "Temperature of top side: ";
-  cin >> ttop;
+  double tcent, tout, tleft, tright;
+  cout << "Temperature of center: ";
+  cin >> tcent;
+  cout << "Temperature of outside: ";
+  cin >> tout;
   cout << "Temperature of left side: ";
   cin >> tleft;
   cout << "Temperature of right side: ";
@@ -63,16 +63,16 @@ int main(){
   double percerror[nr + 1][nz + 1];
   //initialize grid with initial conditions
   for(int i = 0; i< nr + 1; i++){
-    grid[i][0] = tbot;
-    grid[i][nz] = ttop;
+    grid[i][0] = tleft;
+    grid[i][nz] = tright;
     error[i][0] = 0;
     error[i][nz] = 0;
     percerror[i][0] = 0;
     percerror[i][nz] = 0;
   }
   for(int j = 0; j< nz + 1; j++){
-    grid[nr][j] = tright;
-    grid[0][j] = tleft;
+    grid[nr][j] = tout;
+    grid[0][j] = tcent;
     error[nr][j] = 0;
     error[0][j] = 0;
     percerror[nr][j] = 0;
@@ -152,7 +152,7 @@ int main(){
   for(int i = 1; i< nr; i++){
     for(int j = 1; j< nz; j++){
       grid[i][j] = mat[getPos(i, j, nr)][matNum];
-      double actual = getT(i*lnr, j*lnz, lr, lz, findMaxTemp(tleft, tright, ttop, tbot));
+      double actual = getT(i*lnr, j*lnz, lr, lz, findMaxTemp(tleft, tright, tout, tcent));
       error[i][j] = grid[i][j] - actual;
       if(error[i][j] < 0){
         error[i][j] *= -1;
