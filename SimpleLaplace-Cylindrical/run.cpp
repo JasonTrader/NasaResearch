@@ -152,6 +152,9 @@ int main(){
   for(int i = 1; i< nr; i++){
     for(int j = 1; j< nz; j++){
       grid[i][j] = mat[getPos(i, j, nr)][matNum];
+      if(i == 1){
+        grid[0][j] = grid[i][j];
+      }
       double actual = getT(i*lnr, j*lnz, lr, lz, findMaxTemp(tleft, tright, tout, tcent));
       error[i][j] = grid[i][j] - actual;
       if(error[i][j] < 0){
