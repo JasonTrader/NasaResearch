@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <iomanip>
+#include <fstream>
 using namespace std;
 #define PI 3.14159265359
 
@@ -210,7 +211,21 @@ int main(){
     }
     cout << endl;
   }
+  //output data for plotly
+  ofstream myfile;
+  myfile.open("SimpleLaplaceCartesianDataforplotly.txt");
+  myfile << "Simple Laplace in Cartesian\n";
+  myfile << "X (m)\n";
+  myfile << "Y (m)\n";
+  myfile << lnx << endl << lx << endl << lny << endl << ly << endl << nx << endl << ny << endl;
+  for(int i = 0; i< nx + 1; i++){
+    for(int j = 0; j<ny + 1; j++){
+      myfile << grid[i][j] << ",";
+    }
+    myfile << endl;
+  }
 
+  myfile.close();
 
 
 }
