@@ -179,7 +179,7 @@ int main(){
   //}
 
 
-
+/*
   cout << "\n-----------------" << endl;
   cout << "Final Results:" << endl;
   //see grid
@@ -208,8 +208,8 @@ int main(){
       cout << setprecision(2) << *(grid+(i*(ny+1))+j) << "\t";
     }
     cout << endl;
-  }
-  //output data for plotly
+  }*/
+  /*//output data for plotly
   ofstream myfile;
   myfile.open("SimpleLaplaceCartesianDataforplotly2.txt");
   myfile << "Simple Laplace in Cartesian\n";
@@ -224,5 +224,17 @@ int main(){
   }
 
   myfile.close();
+  */
 
+  //output data for matlab
+  ofstream myfile;
+  myfile.open("matLabData.txt");
+  for(int i = 0; i< nx + 1; i++){
+    for(int j = 0; j<ny + 1; j++){
+      myfile << i*lnx << " " << j*lny << " " << *(grid+(i*(ny+1))+j) << "\n";
+    }
+    myfile << endl;
+  }
+
+  myfile.close();
 }
