@@ -226,7 +226,7 @@ int main(){
   myfile.close();
   */
 
-  //output data for matlab
+  /*//output data for matlab
   ofstream myfile;
   myfile.open("matLabData.txt");
   for(int i = 0; i< nx + 1; i++){
@@ -235,6 +235,27 @@ int main(){
     }
     myfile << endl;
   }
+  myfile.close();
+  */
 
+  //Output data for contour maps plotly
+  ofstream myfile;
+  myfile.open("plotlyContour.txt");
+  int i, j;
+  for(i = 0; i< nx; i++){
+    myfile << i*lnx << " ";
+  }
+  myfile << i*lnx << "\n";
+  for(j = 0; j<ny; j++){
+    myfile << j*lny << " ";
+  }
+  myfile << j*lny << "\n";
+
+  for(j = 0; j<ny + 1; j++){
+    for(i = 0; i< nx; i++){
+      myfile << *(grid+(i*(ny+1))+j) << " ";
+    }
+    myfile << *(grid+(i*(ny+1))+j) << "\n";
+  }
   myfile.close();
 }
