@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 using namespace std;
 
 
@@ -37,6 +38,9 @@ int main(){
   cout << "What is you time step? (Must be smaller than " << (ldx*ldx)/(2*difus) << "s to ensure stability) " ;
   double tstep;
   cin >> tstep;
+  cout << "How often would you like to record the rod's temperature? ";
+  double recstep;
+  cin >> recstep;
   cout << "What must the maximum change be to consider the solution as steady? ";
   double thresh;
   cin >> thresh;
@@ -52,11 +56,29 @@ int main(){
     cout << "Segemt " << inc << ": ";
     cin >> newt[inc];
   }
-
-
+  ofstream myfile;
+  myfile.open("results.txt");
+  int write;
+  for(write=0; write<ndx+1; write++){
+    myfile << write*ldx << " ";
+  }
+  myfile << write*ldx << "\n";
+  for(write=0; write<ndx+1; write++){
+    myfile << newt[write] << " ";
+  }
+  myfile << newt[write] << "\n";
+  int reccount = 0;
   int tcount = 0;
   do{
+    reccount++;
     tcount++;
+    if(reccount*tstep >= recstep){
+      reccount=0;
+      for(write=0; write<ndx+1; write++){
+        myfile << newt[write] << " ";
+      }
+      myfile << newt[write] << "\n";
+    }
     for(int i = 0; i < (ndx + 1); i++){
       oldt[i] = newt[i];
     }
@@ -66,13 +88,15 @@ int main(){
       newt[i] += oldt[i - 1];
       newt[i] *= (difus*tstep/(ldx*ldx));
       newt[i] += oldt[i];
-      if(i == 1)
-        cout << newt[i] << " ";
-      cout << newt[i] << " ";
+      //if(i == 1)
+        //cout << newt[i] << " ";
+      //cout << newt[i] << " ";
     }
     newt[0] = newt[1];
-    cout << newt[ndx + 1] << endl;
+    //cout << newt[ndx + 1] << endl;
   } while(!steadyState(oldt, newt, thresh, ndx));
   cout << "\n---------------------------------\n";
   cout << "Solution converged in " << tcount * tstep << " seconds\n";
+  myfile << "STOP\n";
+  myfile.close();
 }
