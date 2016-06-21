@@ -55,11 +55,10 @@ int main(){
   double aug = eta*tstep/(mu0*ldr*ldr);
   int tcount = 0;
   do{
-    if(tcount%5000==0){
+    if(tcount%100==0){
       for(out = 0; out<numseg+1; out++){
         myfile << rod_new[out] << " ";
       }
-      cout<<rod_new[1]<<endl;
       myfile << rod_new[out] << "\n";
 
     }
@@ -71,7 +70,9 @@ int main(){
     }
 
     //update
-    for(int i = 1; i<numseg+1; i++){
+
+    rod_new[1]+= aug*(2*rod_old[2] - 4*rod_old[1]);
+    for(int i = 2; i<numseg+1; i++){
       rod_new[i] += aug*((1+(1/(2*i)))*rod_old[i+1] + (-2-(1/(i*i)))*rod_old[i] + (1-(1/(2*i)))*rod_old[i-1]);
     }
   } while(!converge(rod_new, rod_old, numseg, conv));
