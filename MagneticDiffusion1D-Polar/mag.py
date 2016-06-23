@@ -10,7 +10,7 @@ line = raw_input()
 vals = line.split(' ')
 for item in vals:
     float(item)
-tempplot = Scatter(x=x_range,y=vals,mode='lines',line=dict(shape='linear'))
+tempplot = Scatter(x=x_range,y=vals,mode='lines',line=dict(shape='spline'))
 plots = [tempplot]
 
 line = raw_input()
