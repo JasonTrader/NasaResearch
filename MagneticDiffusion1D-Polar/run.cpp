@@ -1,5 +1,7 @@
 #include <iostream>
-#include <fstream>
+#include <stdio.h>
+#include <time.h>
+#include <iomanip>
 using namespace std;
 
 #define PI 3.1415926535897932384
@@ -17,8 +19,13 @@ bool converge(double rod_new[], double rod_old[], double length, double thresh){
 }
 
 int main(){
-  ofstream myfile;
-  myfile.open("results.txt");
+
+  clock_t begin, end;
+  double time_spent;
+  begin = clock();
+
+  FILE *myfile;
+  myfile = fopen("results.txt", "w");
   double imax, rlength, eta, tstep, ldr, conv;
   int numseg;
   cout << "What is your I max? ";
@@ -48,18 +55,18 @@ int main(){
   int out;
   //output r values
   for(out = 0; out<numseg+1; out++){
-    myfile << out*ldr << " ";
-  }
-  myfile << out*ldr << "\n";
+    fprintf( myfile, "%lf ", out*ldr );
+}
+fprintf( myfile, "%lf\n", out*ldr );
 
   double aug = eta*tstep/(mu0*ldr*ldr);
   int tcount = 0;
   do{
-    if(tcount%100==0){
+    if(tcount%10000==0){
       for(out = 0; out<numseg+1; out++){
-        myfile << rod_new[out] << " ";
-      }
-      myfile << rod_new[out] << "\n";
+        fprintf( myfile, "%lf ", *(rod_new+out) );
+    }
+    fprintf( myfile, "%lf\n", *(rod_new+out) );
 
     }
     tcount++;
@@ -77,7 +84,13 @@ int main(){
     }
   } while(!converge(rod_new, rod_old, numseg, conv));
 
-  myfile << "STOP\n";
-  myfile.close();
+  fprintf(myfile, "STOP\n");
+  fclose(myfile);
+
+  end = clock();
+  time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+
+  cout << "\n------------------------------------\nExecution took: "<<  time_spent << " sec\n";
+
   return 0;
 }
