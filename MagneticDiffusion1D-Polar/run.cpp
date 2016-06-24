@@ -63,6 +63,7 @@ fprintf( myfile, "%lf\n", out*ldr );
   int tcount = 0;
   do{
     if(tcount%10000==0){
+      printf("\ntimestep %d", tcount);
       for(out = 0; out<numseg+1; out++){
         fprintf( myfile, "%lf ", *(rod_new+out) );
     }

@@ -78,8 +78,8 @@ int main( void ) {
   int tcount = 0;
 
   do{
-    printf("\ntimestep %d", tcount);
     if(tcount%10000==0){
+      printf("\ntimestep %d", tcount);
       HANDLE_ERROR( cudaMemcpy( rod_new + 1, dev_new + 1, numseg * sizeof(double), cudaMemcpyDeviceToHost ) );
       for (out=0; out<numseg+1; out++) {
           fprintf( myfile, "%lf ", *(rod_new+out) );
