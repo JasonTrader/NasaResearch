@@ -78,7 +78,7 @@ int main( void ) {
   int tcount = 0;
 
   do{
-    printf("timestep %d", tcount);
+    printf("\ntimestep %d", tcount);
     if(tcount%10000==0){
       HANDLE_ERROR( cudaMemcpy( rod_new + 1, dev_new + 1, numseg * sizeof(double), cudaMemcpyDeviceToHost ) );
       for (out=0; out<numseg+1; out++) {
