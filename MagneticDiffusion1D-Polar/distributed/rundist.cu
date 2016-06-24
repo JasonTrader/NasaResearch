@@ -94,7 +94,7 @@ int main( void ) {
 
     //update
     update<<<numseg,1>>>(dev_new, dev_old, numseg+1, dev_conv, thresh, aug);
-    //HANDLE_ERROR( cudaMemcpy( conv, dev_conv, numseg, cudaMemcpyDeviceToHost ) );
+    HANDLE_ERROR( cudaMemcpy( conv, dev_conv, numseg, cudaMemcpyDeviceToHost ) );
 
   } while(!converge(conv, numseg));
 
