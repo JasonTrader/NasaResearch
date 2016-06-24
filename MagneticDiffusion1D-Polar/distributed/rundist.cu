@@ -17,11 +17,16 @@
 #include "book.h"
 #include "func.h"
 #include <stdio.h>
+#include <time.h>
 
 #define PI 3.1415926535897932384
 #define mu0 4*PI*1e-7
 
 int main( void ) {
+
+  clock_t begin, end;
+  double time_spent;
+  begin = clock();
 
   FILE *myfile;
   myfile = fopen("results.txt", "w");
@@ -45,12 +50,7 @@ int main( void ) {
 
   //initialize
   double *rod_new = new double[numseg+2];
-  //double *rod_old = new double[numseg+2];
   bool *conv = new bool[numseg];
-  //*rod_new = 0;
-  //*(rod_new + numseg + 1) = mu0*imax/(2*PI*rlength);
-  //*rod_old = 0;
-  //*(rod_old + numseg + 1) = mu0*imax/(2*PI*rlength);
 
   double *dev_old, *dev_new;
   bool *dev_conv;
@@ -78,7 +78,8 @@ int main( void ) {
   int tcount = 0;
 
   do{
-    if(tcount%100==0){
+    if(tcount%10000==0){
+      HANDLE_ERROR( cudaMemcpy( rod_new + 1, dev_new + 1, numseg * sizeof(double), cudaMemcpyDeviceToHost ) );
       for (out=0; out<numseg+1; out++) {
           fprintf( myfile, "%lf ", *(rod_new+out) );
       }
@@ -93,17 +94,22 @@ int main( void ) {
 
     //update
     update<<<numseg,1>>>(dev_new, dev_old, numseg+1, dev_conv, thresh, aug);
-    HANDLE_ERROR( cudaMemcpy( rod_new + 1, dev_new + 1, numseg * sizeof(double), cudaMemcpyDeviceToHost ) );
-    HANDLE_ERROR( cudaMemcpy( conv, dev_conv, numseg, cudaMemcpyDeviceToHost ) );
+    //HANDLE_ERROR( cudaMemcpy( conv, dev_conv, numseg, cudaMemcpyDeviceToHost ) );
 
   } while(!converge(conv, numseg));
 
   // free the memory allocated on the GPU
   HANDLE_ERROR( cudaFree( dev_old ) );
   HANDLE_ERROR( cudaFree( dev_new ) );
+  HANDLE_ERROR( cudaFree( dev_conv ) );
 
   fprintf(myfile, "STOP\n");
   fclose(myfile);
 
+  end = clock();
+  time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+
+  printf("\n------------------------------------\n");
+  printf("Execution took: %lf sec\n", time_spent);
   return 0;
 }
