@@ -20,13 +20,11 @@ bool converge(double rod_new[], double rod_old[], double length, double thresh){
 
 int main(){
 
-  clock_t begin, end;
-  double time_spent;
-  begin = clock();
+
 
   FILE *myfile;
   myfile = fopen("results.txt", "w");
-  double imax, rlength, eta, tstep, ldr, conv;
+  double imax, rlength, eta, tstep, ldr, tottime;
   int numseg;
   cout << "What is your I max? ";
   cin >> imax;
@@ -37,10 +35,9 @@ int main(){
   cout << "How many segments would you like? ";
   cin >> numseg;
   ldr = rlength/(numseg+1);
-  cout << "What time step would you like? (must be less than " << 0.5*ldr*ldr*mu0/eta << " ) ";
-  cin >> tstep;
-  cout << "What is the threshold for your convergence? ";
-  cin >> conv;
+  tstep = 0.25*ldr*ldr*mu0/eta;
+  cout << "How long would you like to run? ";
+  cin >> tottime;
 
   double rod_new[numseg+2];
   double rod_old[numseg+2];
@@ -56,20 +53,33 @@ int main(){
   //output r values
   for(out = 0; out<numseg+1; out++){
     fprintf( myfile, "%lf ", out*ldr );
-}
-fprintf( myfile, "%lf\n", out*ldr );
+  }
+  fprintf( myfile, "%lf\n", out*ldr );
+
+  for(out = 0; out<numseg+1; out++){
+    fprintf( myfile, "%lf ", *(rod_new+out) );
+  }
+  fprintf( myfile, "%lf\n", *(rod_new+out) );
 
   double aug = eta*tstep/(mu0*ldr*ldr);
   int tcount = 0;
+  clock_t begin, end;
+  double time_spent;
+  begin = clock();
   do{
-    if(tcount%10000==0){
-      printf("\ntimestep %d", tcount);
+    /*if(tcount%100==0){
       for(out = 0; out<numseg+1; out++){
         fprintf( myfile, "%lf ", *(rod_new+out) );
-    }
-    fprintf( myfile, "%lf\n", *(rod_new+out) );
-
-    }
+      }
+      fprintf( myfile, "%lf\n", *(rod_new+out) );
+    }*/
+    /*if(tcount==5){
+      printf("\n");
+      for(out = 0; out<numseg+1; out++){
+        printf("%lf ", *(rod_new+out) );
+      }
+      printf("\n");
+    }*/
     tcount++;
 
     //copy new to old
@@ -83,13 +93,20 @@ fprintf( myfile, "%lf\n", out*ldr );
     for(int i = 2; i<numseg+1; i++){
       rod_new[i] += aug*((1+(1/(2*i)))*rod_old[i+1] + (-2-(1/(i*i)))*rod_old[i] + (1-(1/(2*i)))*rod_old[i-1]);
     }
-  } while(!converge(rod_new, rod_old, numseg, conv));
+  } while((tcount*tstep) < tottime);
+  end = clock();
+  time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+
+
+  for(out = 0; out<numseg+1; out++){
+    fprintf( myfile, "%lf ", *(rod_new+out) );
+  }
+  fprintf( myfile, "%lf\n", *(rod_new+out) );
 
   fprintf(myfile, "STOP\n");
   fclose(myfile);
 
-  end = clock();
-  time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+
 
   cout << "\n------------------------------------\nExecution took: "<<  time_spent << " sec\n";
 
