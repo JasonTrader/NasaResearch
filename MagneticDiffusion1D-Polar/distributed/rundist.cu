@@ -77,15 +77,21 @@ int main( void ) {
   double aug = eta*tstep/(mu0*ldr*ldr);
   int tcount = 0;
 
+
+  for (out=0; out<numseg+1; out++) {
+      fprintf( myfile, "%lf ", *(rod_new+out) );
+  }
+  fprintf( myfile, "%lf\n", *(rod_new+out) );
+
   do{
-    if(tcount%10000==0){
+    /*if(tcount%10000==0){
       printf("\ntimestep %d", tcount);
       HANDLE_ERROR( cudaMemcpy( rod_new + 1, dev_new + 1, numseg * sizeof(double), cudaMemcpyDeviceToHost ) );
       for (out=0; out<numseg+1; out++) {
           fprintf( myfile, "%lf ", *(rod_new+out) );
       }
       fprintf( myfile, "%lf\n", *(rod_new+out) );
-    }
+    }*/
     tcount++;
 
     //copy new to old
@@ -103,6 +109,12 @@ int main( void ) {
   HANDLE_ERROR( cudaFree( dev_old ) );
   HANDLE_ERROR( cudaFree( dev_new ) );
   HANDLE_ERROR( cudaFree( dev_conv ) );
+
+
+  for (out=0; out<numseg+1; out++) {
+      fprintf( myfile, "%lf ", *(rod_new+out) );
+  }
+  fprintf( myfile, "%lf\n", *(rod_new+out) );
 
   fprintf(myfile, "STOP\n");
   fclose(myfile);
