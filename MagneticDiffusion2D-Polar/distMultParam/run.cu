@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <time.h>
-#include <sstream>
-using namespace std;
 
 #define PI 3.1415926535897932384
 #define mu0 4*PI*1e-7
