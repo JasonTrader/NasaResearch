@@ -174,7 +174,7 @@ __global__ void run(double *grids, double *r_augs, double *z_augs, long int *all
           }
           //normal update function
           else{
-            grid_new_s[i] += r_aug*((1+(1/(2*i)))*grid_old_s[i+(zseg+2)] + (-2-(1/(i*i)))*grid_old_s[i] + (1-(1/(2*i)))*grid_old_s[i-(zseg+2)])
+            grid_new_s[i] += r_aug*((1+(1/(2*r)))*grid_old_s[i+(zseg+2)] + (-2-(1/(r*r)))*grid_old_s[i] + (1-(1/(2*r)))*grid_old_s[i-(zseg+2)])
               +z_aug*(grid_old_s[i+1] - 2*grid_old_s[i] + grid_old_s[i-1]);
           }
         }

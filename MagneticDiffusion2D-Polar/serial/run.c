@@ -100,7 +100,7 @@ int main(){
               z_aug * (grid_old[i+1] - 2*grid_old[i] + grid_old[i-1]);
           }
           else{
-            grid_new[i] += r_aug*((1+(1/(2*i)))*grid_old[i+(zseg+2)] + (-2-(1/(i*i)))*grid_old[i] + (1-(1/(2*i)))*grid_old[i-(zseg+2)])
+            grid_new[i] += r_aug*((1+(1/(2*r)))*grid_old[i+(zseg+2)] + (-2-(1/(r*r)))*grid_old[i] + (1-(1/(2*r)))*grid_old[i-(zseg+2)])
               +z_aug*(grid_old[i+1] - 2*grid_old[i] + grid_old[i-1]);
           }
         }
