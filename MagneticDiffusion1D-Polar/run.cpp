@@ -66,7 +66,7 @@ int main(){
   clock_t begin, end;
   double time_spent;
   begin = clock();
-  do{
+  while((tcount*tstep) < tottime){
     /*if(tcount%100==0){
       for(out = 0; out<numseg+1; out++){
         fprintf( myfile, "%lf ", *(rod_new+out) );
@@ -93,9 +93,10 @@ int main(){
     for(int i = 2; i<numseg+1; i++){
       rod_new[i] += aug*((1+(1/(2*i)))*rod_old[i+1] + (-2-(1/(i*i)))*rod_old[i] + (1-(1/(2*i)))*rod_old[i-1]);
     }
-  } while((tcount*tstep) < tottime);
+  }
   end = clock();
   time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+  cout << tcount << endl;
 
 
   for(out = 0; out<numseg+1; out++){
