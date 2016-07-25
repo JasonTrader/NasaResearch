@@ -72,7 +72,7 @@ int main(){
   double r_aug = eta*tstep/(mu0*ldr*ldr);
   double z_aug = eta*tstep/(mu0*ldz*ldz);
   long int total_steps = tottime / tstep;
-  printf("\nSteps: %ld\n", total_steps);
+
 
 
   clock_t begin, end;
@@ -109,6 +109,8 @@ int main(){
   }
   end = clock();
   time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+
+  printf("\nSteps: %ld\n", tcount);
 
 
   myfile = fopen("res.txt", "w");
