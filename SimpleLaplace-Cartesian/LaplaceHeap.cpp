@@ -166,7 +166,7 @@ int main(){
       if(*(error+(i*(ny+1))+j) < 0){
         *(error+(i*(ny+1))+j) *= -1;
       }
-      *(percerror+(i*(ny+1))+j) = 100*(*(grid+(i*(ny+1))+j))/actual;
+      *(percerror+(i*(ny+1))+j) = 100**(error+(i*(ny+1))+j)/actual;
     }
   }
 
@@ -179,7 +179,7 @@ int main(){
   //}
 
 
-/*
+
   cout << "\n-----------------" << endl;
   cout << "Final Results:" << endl;
   //see grid
@@ -205,10 +205,10 @@ int main(){
   //see grid
   for(int j = ny; j> -1 ; j--){
     for(int i = 0; i< nx + 1; i++){
-      cout << setprecision(2) << *(grid+(i*(ny+1))+j) << "\t";
+      cout << setprecision(2) << *(percerror+(i*(ny+1))+j) << "\t";
     }
     cout << endl;
-  }*/
+  }
   /*//output data for plotly
   ofstream myfile;
   myfile.open("SimpleLaplaceCartesianDataforplotly2.txt");
