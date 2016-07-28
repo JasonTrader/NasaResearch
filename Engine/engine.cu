@@ -50,6 +50,8 @@ int main(){
 
   //TODO calculate initial conserved quantities
 
+  //TODO calculate secondary initial quantities
+
   //Time loop
   while(t < totTime){
 
