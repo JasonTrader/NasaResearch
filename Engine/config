@@ -1,0 +1,9 @@
+Propellant (AMU) = 40
+MassFlowRate (kg/s) = 6.0e-3
+Rin (m) = 0
+Rout (m) = 1
+Ztot (m) = 1
+Rpoints = 50
+Zpoints = 50
+StartTime (s) = 0
+EndTime (s) = 0
