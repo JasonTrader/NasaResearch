@@ -46,20 +46,42 @@ int main(){
   double endTime;
   scanf("%*s %*s %*s %lf", &endTime);
 
+//----------------------------------------------------------------------------//
+  //variable setup
+  double dr = lr/(nr+1);
+  double dz = lz/(nz+1);
+  double smallest = dr;
+  if(dz < dr)
+    smallest = dz;
+  double dt = 0.125*smallest*smallest*MU0/eta;//to ensure stability
+  //TODO eta?
+
+//---------------------------------------------------------------------------//
+// Memory setup
+
+  size_t cornerGridSize = (nr+2)*(nz+2)*sizeof(double);
+  dim3 cornerGridWHalosThreadDim(R_EVALS_PER_BLOCK+2, Z_EVALS_PER_BLOCK+2);//+ 2 accounts for halo points
+  int cornerGridWHalosBlockR = 1 + (nr-1)/R_EVALS_PER_BLOCK;//nr = number internal r grid points
+  int cornerGridWHalosBlockZ = 1 + (nz-1)/Z_EVALS_PER_BLOCK;//nz = number internal z grid points
+  dim3 cornerGridWHalosBlockDim(cornerGridWHalosBlockR, cornerGridWHalosBlockZ);
+
+  //Voltage
+  double *voltOld_d, *voltNew_d;//Device voltage grids
+  cudaMalloc(&voltOld_d, cornerGridSize);
+  cudaMalloc(&voltNew_d, cornerGridSize);
+  double *volt_h;//Host voltage grid
+  volt_h = (double*)malloc(cornerGridSize);
+  bool *converge_d;
+  size_t convergeSize = 2*cornerGridWHalosBlockR*cornerGridWHalosBlockZ*sizeof(bool);
+  cudaMalloc(&converge_d, convergeSize);
+  bool *converge_h;
+  converge_h = (bool*)malloc(convergeSize);
+
 //---------------------------------------------------------------------------//
 
   //TODO calculate initial conserved quantities
 
   //TODO calculate secondary initial quantities
-
-
-//---------------------------------------------------------------------------//
-//This area is used for thread/block dim calcs
-
-  dim3 cornerGridWHalosThreadDim(R_EVALS_PER_BLOCK+2, Z_EVALS_PER_BLOCK+2);//+ 2 accounts for halo points
-  int cornerGridWHalosR = 1 + (nr-1)/R_EVALS_PER_BLOCK;//nr = number internal r grid points
-  int cornerGridWHalosZ = 1 + (nz-1)/Z_EVALS_PER_BLOCK;//nz = number internal z grid points
-  dim3 cornerGridWHalosBlockDim(cornerGridWHalosR, cornerGridWHalosZ);
 
 
   //Time loop
@@ -68,30 +90,15 @@ int main(){
 
 
 //---------------------------------------------------------------------------//
-//Update Voltage
-    bool didConverge = false;
-    while(!didConverge){
-      cudaMemcpy(volt_d_old, volt_d_new, gridSize, cudaMemcpyDeviceToDevice);
-      //Evaluate red blocks
-      updateVoltage<<<cornerGridWHalosBlockDim,cornerGridWHalosThreadDim,(zEvalsPerBlock+2)*(rEvalsPerBlock+2)*sizeof(double)>>>(volt_d_old, volt_d_new, true, converge_d, nr, nz, dr, dz, blockz);
-      cudaMemcpy(volt_d_old, volt_d_new, gridSize, cudaMemcpyDeviceToDevice);
-      //Evaluate black blocks
-      updateVoltage<<<cornerGridWHalosBlockDim,cornerGridWHalosThreadDim,(zEvalsPerBlock+2)*(rEvalsPerBlock+2)*sizeof(double)>>>(volt_d_old, volt_d_new, false, converge_d, nr, nz, dr, dz, blockz);
-      //copy back converge check
-      cudaMemcpy(converge_h, converge_d, convSize, cudaMemcpyDeviceToHost);
-
-      //all converge must be true
-      didConverge = converge_h[0];
-      for(int i = 1; i< 2*blockr*blockz; i++){
-        didConverge = didConverge && converge_h[i];
-      }
-    }//converged
+    //Update Voltage
+    getNewVoltage(cornerGridSize,convergeSize,voltOld_d,voltNew_d,volt_h,cornerGridWHalosBlockDim,
+      cornerGridWHalosThreadDim,converge_d,converge_h,nr,nz,dr,dz,cornerGridWHalosBlockR,cornerGridWHalosBlockZ);
 
 //---------------------------------------------------------------------------//
 
     //TODO calculate fluxes
 
-    //TODO Update conserved quamtities
+    //TODO Update conserved quantities
 
     //TODO Update secondary quantities
 
@@ -100,7 +107,11 @@ int main(){
 
   //TODO Output results
 
-  //TODO free memory
+//---------------------------------------------------------------------------//
+//Free memory
+  cudaFree(voltOld_d);
+  cudaFree(voltNew_d);
+  free(volt_h);
 
   return 0;
 }

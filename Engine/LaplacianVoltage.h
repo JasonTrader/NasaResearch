@@ -3,19 +3,19 @@
 
 #include "globals.h"
 
-#define vOld(i,k) volt_old[k*(nr+2)+i]
-#define vNew(i,k) volt_old[k*(nr+2)+i]
+#define vOld(i,k) voltOld[k*(nr+2)+i]
+#define vNew(i,k) voltNew[k*(nr+2)+i]
 #define vShared(xOffset,yOffset) volt_s[(threadIdx.y+yOffset)*(R_EVALS_PER_BLOCK+2) + (threadIdx.x+xOffset)]
 #define OMEGA 1.5
 #define RELATIVE_ERROR 1e-3
 
 
 //-----------------------------------------------------------------------------
-__global__ void update(double *volt_old, double * volt_new, bool isRed, bool *converge, int nr, int nz, double dr, double dz, int blockz){
+__global__ void updateVoltage(double *voltOld, double * voltNew, bool isRed, bool *converge, int nr, int nz, double dr, double dz, int blockZ){
   extern __shared__ double volt_s[];
   int i = blockIdx.x * Z_EVALS_PER_BLOCK + threadIdx.x;//x position index
   int k = blockIdx.y * R_EVALS_PER_BLOCK + threadIdx.y;//y position index
-  int blockPos = 2*(blockIdx.x * blockz + blockIdx.y);
+  int blockPos = 2*(blockIdx.x * blockZ + blockIdx.y);
   if(isRed){//Could have just as well been !isRed
     blockPos++;//Because each block has two convergence flags, need to only update one of the two
   }
@@ -55,5 +55,32 @@ __global__ void update(double *volt_old, double * volt_new, bool isRed, bool *co
     }//end of not halo
   }//end of red/black
 }//end of update
+
+void getNewVoltage(size_t cornerGridSize, size_t convSize, double *voltOld_d, double *voltNew_d,
+  double *volt_h, dim3 cornerGridWHalosBlockDim, dim3 cornerGridWHalosThreadDim,
+   bool *converge_d, bool *converge_h, int nr, int nz, double dr, double dz,
+   int blockR, int blockZ){
+
+
+  bool didConverge = false;
+  while(!didConverge){
+    cudaMemcpy(voltOld_d, voltNew_d, cornerGridSize, cudaMemcpyDeviceToDevice);
+    //Evaluate red blocks
+    updateVoltage<<<cornerGridWHalosBlockDim,cornerGridWHalosThreadDim,(Z_EVALS_PER_BLOCK+2)*(R_EVALS_PER_BLOCK+2)*sizeof(double)>>>(voltOld_d, voltNew_d, true, converge_d, nr, nz, dr, dz, blockZ);
+    cudaMemcpy(voltOld_d, voltNew_d, cornerGridSize, cudaMemcpyDeviceToDevice);
+    //Evaluate black blocks
+    updateVoltage<<<cornerGridWHalosBlockDim,cornerGridWHalosThreadDim,(Z_EVALS_PER_BLOCK+2)*(R_EVALS_PER_BLOCK+2)*sizeof(double)>>>(voltOld_d, voltNew_d, false, converge_d, nr, nz, dr, dz, blockZ);
+    //copy back converge check
+    cudaMemcpy(converge_h, converge_d, convSize, cudaMemcpyDeviceToHost);
+
+    //all converge must be true
+    didConverge = converge_h[0];
+    for(int i = 1; i< 2*blockR*blockZ; i++){
+      didConverge = didConverge && converge_h[i];
+    }
+  }//converged
+
+  cudaMemcpy(volt_h, voltNew_d, cornerGridSize, cudaMemcpyDeviceToHost);//Copy results back
+}
 
 #endif
