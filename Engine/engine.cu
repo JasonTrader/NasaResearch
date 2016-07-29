@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define PI 3.1415926535897932384
-#define mu0 4*PI*1e-7
+//Header files
+#include "LaplacianVoltage.h"
 
 int main(){
 
@@ -17,14 +17,14 @@ int main(){
 
   //inner r (m)
   double rIn;
-  scanf("%*s %*s %*s %lf", &rin);
+  scanf("%*s %*s %*s %lf", &rIn);
 
   //outer r (m)
   double rOut;
-  scanf("%*s %*s %*s %lf", &rout);
+  scanf("%*s %*s %*s %lf", &rOut);
 
   //Total rlength
-  double lr = rout - rin;
+  double lr = rIn - rOut;
 
   //z length (m)
   double lz;
@@ -32,11 +32,11 @@ int main(){
 
   //number of points in r direction
   int nr;
-  scanf("%*s %*s %*s %d", &nr);
+  scanf("%*s %*s %d", &nr);
 
   //number of points in z direction
   int nz;
-  scanf("%*s %*s %*s %d", &nz);
+  scanf("%*s %*s %d", &nz);
 
   //Start time (s)
   double startTime;
@@ -53,7 +53,8 @@ int main(){
   //TODO calculate secondary initial quantities
 
   //Time loop
-  while(t < totTime){
+  double t = startTime;
+  while(t < endTime){
 
     //TODO Calculate electric potential
 
