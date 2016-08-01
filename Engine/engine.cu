@@ -54,7 +54,7 @@ int main(){
   double smallest = dr;
   if(dz < dr)
     smallest = dz;
-  double dt = 0.125*smallest*smallest*MU0/eta;//to ensure stability
+  //double dt = 0.125*smallest*smallest*MU0/eta;//to ensure stability
   //TODO eta?
 
 //---------------------------------------------------------------------------//
@@ -98,15 +98,16 @@ int main(){
 
 //---------------------------------------------------------------------------//
 
-    //TODO calculate fluxes
-
-    //NOTE these two steps may be able to be combined
-
-    //TODO Update conserved quantities
+    //TODO U0
+    //TODO U1
+    //TODO U2
+    //TODO U3
+    //TODO U4
+    //TODO U5
 
     //TODO Update secondary quantities
 
-    t+=dt;//update time
+    //t+=dt;//update time
   }
 
   //TODO Output results
