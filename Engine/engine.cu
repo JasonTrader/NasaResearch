@@ -3,6 +3,7 @@
 
 //Header files
 #include "LaplacianVoltage.h"
+#include "MassConservation.h"
 
 int main(){
 
@@ -98,6 +99,8 @@ int main(){
 //---------------------------------------------------------------------------//
 
     //TODO calculate fluxes
+
+    //NOTE these two steps may be able to be combined
 
     //TODO Update conserved quantities
 
