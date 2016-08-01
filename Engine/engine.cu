@@ -92,7 +92,8 @@ int main(){
 //---------------------------------------------------------------------------//
     //Update Voltage
     getNewVoltage(cornerGridSize,convergeSize,voltOld_d,voltNew_d,volt_h,cornerGridWHalosBlockDim,
-      cornerGridWHalosThreadDim,converge_d,converge_h,nr,nz,dr,dz,cornerGridWHalosBlockR,cornerGridWHalosBlockZ);
+      cornerGridWHalosThreadDim,converge_d,converge_h,nr,nz,dr,dz,
+      cornerGridWHalosBlockR,cornerGridWHalosBlockZ);
 
 //---------------------------------------------------------------------------//
 
