@@ -18,7 +18,7 @@
 #define mvZOldShared(xOffset,yOffset) mvZOld_s[(threadIdx.y+yOffset+1)*(R_EVALS_PER_BLOCK+2) + (threadIdx.x+xOffset+1)]
 #define mOldShared(xOffset,yOffset) mass_s[(threadIdx.y+yOffset+1)*(R_EVALS_PER_BLOCK+2) + (threadIdx.x+xOffset+1)]
 
-__global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double *mvZOld, double *mvSource, int nr, int nz, double dr, double dz, double dt){
+__global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double *mvZOld, double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity){
   extern __shared__ double U_s[];
   double *mvROld_s, *mvZOld_s, *mass_s;
   mvROld_s = U_s;
@@ -30,6 +30,17 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
   //"ghost point"
   int i = blockIdx.x*R_EVALS_PER_BLOCK + threadIdx.x - 1;
   int k = blockIdx.y*Z_EVALS_PER_BLOCK + threadIdx.y - 1;
+
+  double Mparticle;
+  double Temperature;
+  if(polarity){
+    Mparticle = Mp;
+    Temperature = Tp;
+  }
+  else{
+    Mparticle = Mn;
+    Temperature = Tn;
+  }
 
 //Copy data into shared memory for speedup
   if((i == -1 || i == nr+1)){//r ghost point
@@ -75,7 +86,7 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
   }//end inside grid
 }
 
-__global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double *mvZOld, double *mvSource, int nr, int nz, double dr, double dz, double dt){
+__global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double *mvZOld, double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity){
   extern __shared__ double U_s[];
   double *mvROld_s, *mvZOld_s, *mass_s;
   mvROld_s = U_s;
@@ -87,6 +98,17 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
   //"ghost point"
   int i = blockIdx.x*R_EVALS_PER_BLOCK + threadIdx.x - 1;
   int k = blockIdx.y*Z_EVALS_PER_BLOCK + threadIdx.y - 1;
+
+  double Mparticle;
+  double Temperature;
+  if(polarity){
+    Mparticle = Mp;
+    Temperature = Tp;
+  }
+  else{
+    Mparticle = Mn;
+    Temperature = Tn;
+  }
 
 //Copy data into shared memory for speedup
   if((i == -1 || i == nr+1)){//r ghost point
@@ -132,18 +154,25 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
   }//end inside grid
 }
 
-/*//TODO test function
-void getMass(double *mOldP, double *mNewP, double *mvRP, double *mvZP, double *massSourceP,
-  double *mOldN, double * mNewN, double *mvRN, double *mvZN, double *massSourceN,
+//TODO test function
+void getMomentum(double *mOldP, double *mvRNewP, double *mvZNewP, double *mvROldP, double *mvZOldP, double *mvRSourceP, double *mvZSourceP,
+  double *mOldN, double *mvRNewN, double *mvZNewN, double *mvROldN, double *mvZOldN, double *mvRSourceN, double *mvZSourceN,
   int nr, int nz, double dr, double dz, double dt,
   dim3 centerGridWHalosBlockDim, dim3 centerGridWHalosThreadDim, size_t centerGridSize){
 
-      updateMass<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,2*centerGridSize>>>
-      (mOldP, mNewP, mvRP, mvZP, massSourceP, nr, nz, dr, dz, dt);//Update massOld positives
+      updateMvRhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*centerGridSize>>>
+      (mOldP, mvRNewP, mvROldP, mvZOldP, mvRSourceP, nr, nz, dr, dz, dt, true);//Update r hat momentum positives
 
-      updateMass<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,2*centerGridSize>>>
-      (mOldN, mNewN, mvRN, mvZN, massSourceN, nr, nz, dr, dz, dt);//Update massOld negatives
+      updateMvRhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*centerGridSize>>>
+      (mOldN, mvRNewN, mvROldN, mvZOldN, mvRSourceN, nr, nz, dr, dz, dt, false);//Update r hat momentum negatives
+
+      updateMvZhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*centerGridSize>>>
+      (mOldP, mvZNewP, mvROldP, mvZOldP, mvZSourceP, nr, nz, dr, dz, dt, true);//Update z hat momentum positives
+
+      updateMvZhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*centerGridSize>>>
+      (mOldN, mvZNewN, mvROldN, mvZOldN, mvZSourceN, nr, nz, dr, dz, dt, false);//Update z hat momentum negatives
+
   }
 
-*/
+
 #endif

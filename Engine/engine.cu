@@ -125,10 +125,10 @@ int main(){
     getMass(U_d(massP,o),U_d(massP,n),U_d(momentumPR,o),U_d(momentumPZ,o),S_d(massP),
       U_d(massN,o),U_d(massN,n),U_d(momentumNR,o),U_d(momentumNZ,o),S_d(massN),
       nr,nz,dr,dz,dt,centerGridWHalosBlockDim,centerGridWHalosThreadDim,centerGridSize);
-    //TODO U2
-    //TODO U3
-    //TODO U4
-    //TODO U5
+
+    getMomentum(U_d(massP,o), U_d(momentumPR,n), U_d(momentumPZ,n), U_d(momentumPR,o), U_d(momentumPZ,o), S_d(momentumPR), S_d(momentumPZ),
+      U_d(massN,o), U_d(momentumNR,n), U_d(momentumNZ,n), U_d(momentumNR,o), U_d(momentumNZ,o), S_d(momentumNR), S_d(momentumNZ),
+      nr,nz,dr,dz,dt,centerGridWHalosBlockDim,centerGridWHalosThreadDim,centerGridSize);
     //TODO Copy back U
 
     //TODO Update secondary quantities
