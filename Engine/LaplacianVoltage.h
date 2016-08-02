@@ -60,9 +60,8 @@ __global__ void updateVoltage(double *voltOld, double * voltNew, bool isRed, boo
 
 __global__ void updateEFields(double *Er, double *Ez, double *voltOld, double dr, double dz, int nr){
   extern __shared__ double volt_s[];
-  int i = blockIdx.x * zEvalsPerBlock + threadIdx.x;//x position index
-  int k = blockIdx.y * rEvalsPerBlock + threadIdx.y;//y position index
-  int sharedPos = threadIdx.y * (rEvalsPerBlock+1) + threadIdx.x;//Making 2D into 1D for the shared memory position in this block
+  int i = blockIdx.x * Z_EVALS_PER_BLOCK + threadIdx.x;//x position index
+  int k = blockIdx.y * R_EVALS_PER_BLOCK + threadIdx.y;//y position index
   vShared(0,0) = vOld(i,k);//Bottom Left
   vShared(1,0) = vOld((i+1),k);//Bottom right
   vShared(0,1) = vOld(i,(k+1));//Top Left
