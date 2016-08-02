@@ -2,8 +2,14 @@
 #include <stdio.h>
 
 //Header files
+#include "globals.h"
 #include "LaplacianVoltage.h"
 #include "MassConservation.h"
+
+#define U_d(i) U_d+(i*(nr+1)*(nz+1))
+#define U_h(i) U_h+(i*(nr+1)*(nz+1))
+#define S_d(i) S_d+(i*(nr+1)*(nz+1))
+#define S_h(i) S_h+(i*(nr+1)*(nz+1))
 
 int main(){
 
@@ -54,7 +60,7 @@ int main(){
   double smallest = dr;
   if(dz < dr)
     smallest = dz;
-  //double dt = 0.125*smallest*smallest*MU0/eta;//to ensure stability
+  double dt = 0.125*smallest*smallest*MU0;///eta;//to ensure stability
   //TODO eta?
 
 //---------------------------------------------------------------------------//
@@ -65,6 +71,12 @@ int main(){
   int cornerGridWHalosBlockR = 1 + (nr-1)/R_EVALS_PER_BLOCK;//nr = number internal r grid points
   int cornerGridWHalosBlockZ = 1 + (nz-1)/Z_EVALS_PER_BLOCK;//nz = number internal z grid points
   dim3 cornerGridWHalosBlockDim(cornerGridWHalosBlockR, cornerGridWHalosBlockZ);
+
+  size_t centerGridSize = (nr+1)*(nz+1)*sizeof(double);
+  dim3 centerGridWHalosThreadDim(R_EVALS_PER_BLOCK+2, Z_EVALS_PER_BLOCK+2);//+ 2 accounts for halo points
+  int centerGridWHalosBlockR = 1 + (nr+1-1)/R_EVALS_PER_BLOCK;//nr+1 = number internal r grid points
+  int centerGridWHalosBlockZ = 1 + (nz+1-1)/Z_EVALS_PER_BLOCK;//nz + 1 = number internal z grid points
+  dim3 centerGridWHalosBlockDim(centerGridWHalosBlockR, centerGridWHalosBlockZ);
 
   //Voltage
   double *voltOld_d, *voltNew_d;//Device voltage grids
@@ -77,6 +89,16 @@ int main(){
   cudaMalloc(&converge_d, convergeSize);
   bool *converge_h;
   converge_h = (bool*)malloc(convergeSize);
+
+  //Conserved Quantities
+  size_t uSize = 6*centerGridSize;
+  double *U_d, *S_d;
+  cudaMalloc(&U_d,uSize);
+  cudaMalloc(&S_d,uSize);
+  double *U_h, *S_h;
+  U_h = (double*)malloc(centerGridSize);
+  S_h = (double*)malloc(centerGridSize);
+
 
 //---------------------------------------------------------------------------//
 
@@ -98,16 +120,18 @@ int main(){
 
 //---------------------------------------------------------------------------//
 
-    //TODO U0
-    //TODO U1
+    getMass(U_d(massP),U_d(momentumPR),U_d(momentumPZ),S_d(massP),
+      U_d(massN),U_d(momentumNR),U_d(momentumNZ),S_d(massN),
+      nr,nz,dr,dz,dt,centerGridWHalosBlockDim,centerGridWHalosThreadDim,centerGridSize);
     //TODO U2
     //TODO U3
     //TODO U4
     //TODO U5
+    //TODO Copy back U
 
     //TODO Update secondary quantities
 
-    //t+=dt;//update time
+    t+=dt;//update time
   }
 
   //TODO Output results

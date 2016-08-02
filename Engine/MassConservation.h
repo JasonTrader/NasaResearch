@@ -4,18 +4,18 @@
 #include "globals.h"
 
 //NOTE there are nr+1 points per row of finite volumes
-//also mssOld and massNew are 2d grids compressed to one dimension
-#define mOld(i,k) massOld[k*(nr+1)+i]
-#define mNew(i,k) massNew[k*(nr+1)+i]
+//also mass is a 2d grid compressed to one dimension
+#define mass(i,k) mass[k*(nr+1)+i]
 #define mvR(i,k) mvR[k*(nr+1)+i]
 #define mvZ(i,k) mvZ[k*(nr+1)+i]
+#define massSource(i,k) massSource[k*(nr+1)+i]
 //Shared position is defined relative to the current position
 //+1 accounts for the -1 in the declaration of i and k
 //this -1 is specific for finite volume
 #define mvRShared(xOffset,yOffset) mvR_s[(threadIdx.y+yOffset+1)*(R_EVALS_PER_BLOCK+2) + (threadIdx.x+xOffset+1)]
 #define mvZShared(xOffset,yOffset) mvZ_s[(threadIdx.y+yOffset+1)*(R_EVALS_PER_BLOCK+2) + (threadIdx.x+xOffset+1)]
 
-__global__ void updateMass(double *massOld, double *massNew, double *mvR, double *mvZ, int nr, int nz, double dr, double dz, double dt){
+__global__ void updateMass(double *mass, double *mvR, double *mvZ, double *massSource, int nr, int nz, double dr, double dz, double dt){
   extern __shared__ double mv_s[];
   double *mvR_s, *mvZ_s;
   mvR_s = mv_s;
@@ -61,12 +61,20 @@ __global__ void updateMass(double *massOld, double *massNew, double *mvR, double
       mvRLeft = 0.5*(mvRShared((-1),0) + mvRShared(0,0));
       mvRRight = 0.5*(mvRShared(0,0) + mvRShared(1,0));
 
-      mNew(i,k) = mOld(i,k) + dt*((mvRLeft-mvRRight)/dr + (mvZBot-mvZTop)/dz);
-
+      mass(i,k) += - dt*((mvRRight-mvRLeft)/dr + (mvZTop-mvZBot)/dz - massSource(i,k));
     }//end not halo points
   }//end inside grid
-
 }
+
+//TODO test function
+void getMass(double *massP, double *mvRP, double *mvZP, double *massSourceP,
+  double *massN, double *mvRN, double *mvZN, double *massSourceN,
+  int nr, int nz, double dr, double dz, double dt,
+  dim3 centerGridWHalosBlockDim, dim3 centerGridWHalosThreadDim, size_t centerGridSize){
+
+      updateMass<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,2*centerGridSize>>>(massP, mvRP, mvZP, massSourceP, nr, nz, dr, dz, dt);//Update mass positives
+      updateMass<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,2*centerGridSize>>>(massN, mvRN, mvZN, massSourceN, nr, nz, dr, dz, dt);//Update mass negatives
+  }
 
 
 #endif
