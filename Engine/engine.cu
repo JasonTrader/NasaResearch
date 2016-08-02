@@ -62,7 +62,7 @@ int main(){
   if(dz < dr)
     smallest = dz;
   double dt = 0.125*smallest*smallest*MU0;///eta;//to ensure stability
-  //TODO eta?
+  //QUESTION eta?
 
 //---------------------------------------------------------------------------//
 // Memory setup
@@ -131,6 +131,7 @@ int main(){
     //TODO Copy back U
 
     //TODO Update secondary quantities
+    //QUESTION: is source/sink included?
 
     t+=dt;//update time
   }
