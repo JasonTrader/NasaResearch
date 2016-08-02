@@ -15,8 +15,8 @@
 //-----------------------------------------------------------------------------
 __global__ void updateVoltage(double *voltOld, double * voltNew, bool isRed, bool *converge, int nr, int nz, double dr, double dz, int blockZ){
   extern __shared__ double volt_s[];
-  int i = blockIdx.x * Z_EVALS_PER_BLOCK + threadIdx.x;//x position index
-  int k = blockIdx.y * R_EVALS_PER_BLOCK + threadIdx.y;//y position index
+  int i = blockIdx.x * R_EVALS_PER_BLOCK + threadIdx.x;//x position index
+  int k = blockIdx.y * Z_EVALS_PER_BLOCK + threadIdx.y;//y position index
   int blockPos = 2*(blockIdx.x * blockZ + blockIdx.y);
   if(isRed){//Could have just as well been !isRed
     blockPos++;//Because each block has two convergence flags, need to only update one of the two
