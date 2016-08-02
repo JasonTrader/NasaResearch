@@ -19,4 +19,9 @@ enum U{
   momentumNZ
 };
 
+enum on{
+  o,
+  n
+};
+
 #endif
