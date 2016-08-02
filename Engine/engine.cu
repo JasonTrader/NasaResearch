@@ -4,6 +4,7 @@
 //Header files
 #include "globals.h"
 #include "LaplacianVoltage.h"
+#include "sourceSink.h"
 #include "MassConservation.h"
 #include "MomentumConservation.h"
 #include "UCopy.h"
@@ -94,6 +95,8 @@ int main(){
   cudaMalloc(&converge_d, convergeSize);
   bool *converge_h;
   converge_h = (bool*)malloc(convergeSize);
+
+  //E Fields
   double *Er_d, *Ez_d;
   cudaMalloc(&Er_d,centerGridSize);
   cudaMalloc(&Ez_d,centerGridSize);
@@ -130,6 +133,9 @@ int main(){
       cornerGridWHalosBlockR,cornerGridWHalosBlockZ);
 
 //---------------------------------------------------------------------------//
+    getSourceSink(S_d(massP),S_d(massN),S_d(momentumPR),S_d(momentumNR),S_d(momentumPZ),S_d(momentumNZ),
+      U_d(massP,n),U_d(massN,n),U_d(momentumPR,n),U_d(momentumNR,n),U_d(momentumPZ,n),U_d(momentumNZ,n),
+      Er_d, Ez_d,dr,nr,centerGridNoHalosBlockDim,centerGridNoHalosThreadDim);
 
     getMass(U_d(massP,o),U_d(massP,n),U_d(momentumPR,o),U_d(momentumPZ,o),S_d(massP),
       U_d(massN,o),U_d(massN,n),U_d(momentumNR,o),U_d(momentumNZ,o),S_d(massN),
@@ -143,7 +149,6 @@ int main(){
       U_d(momentumPR,o), U_d(momentumPR,n), U_d(momentumNR,o), U_d(momentumNR,n),
       U_d(momentumPZ,o), U_d(momentumPZ,n), U_d(momentumNZ,o), U_d(momentumNZ,n), centerGridSize);
 
-    //TODO Source/Sink
 
     t+=dt;//update time
   }
