@@ -71,12 +71,12 @@ __global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ, 
 void getMass(double *mOldP, double *mNewP, double *mvRP, double *mvZP, double *massSourceP,
   double *mOldN, double * mNewN, double *mvRN, double *mvZN, double *massSourceN,
   int nr, int nz, double dr, double dz, double dt,
-  dim3 centerGridWHalosBlockDim, dim3 centerGridWHalosThreadDim, size_t centerGridSize){
+  dim3 centerGridWHalosBlockDim, dim3 centerGridWHalosThreadDim){
 
-      updateMass<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,2*centerGridSize>>>
+      updateMass<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,2*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
       (mOldP, mNewP, mvRP, mvZP, massSourceP, nr, nz, dr, dz, dt);//Update mass positives
 
-      updateMass<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,2*centerGridSize>>>
+      updateMass<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,2*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
       (mOldN, mNewN, mvRN, mvZN, massSourceN, nr, nz, dr, dz, dt);//Update mass negatives
   }
 

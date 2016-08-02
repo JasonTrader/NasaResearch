@@ -158,18 +158,18 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
 void getMomentum(double *mOldP, double *mvRNewP, double *mvZNewP, double *mvROldP, double *mvZOldP, double *mvRSourceP, double *mvZSourceP,
   double *mOldN, double *mvRNewN, double *mvZNewN, double *mvROldN, double *mvZOldN, double *mvRSourceN, double *mvZSourceN,
   int nr, int nz, double dr, double dz, double dt,
-  dim3 centerGridWHalosBlockDim, dim3 centerGridWHalosThreadDim, size_t centerGridSize){
+  dim3 centerGridWHalosBlockDim, dim3 centerGridWHalosThreadDim){
 
-      updateMvRhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*centerGridSize>>>
+      updateMvRhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
       (mOldP, mvRNewP, mvROldP, mvZOldP, mvRSourceP, nr, nz, dr, dz, dt, true);//Update r hat momentum positives
 
-      updateMvRhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*centerGridSize>>>
+      updateMvRhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
       (mOldN, mvRNewN, mvROldN, mvZOldN, mvRSourceN, nr, nz, dr, dz, dt, false);//Update r hat momentum negatives
 
-      updateMvZhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*centerGridSize>>>
+      updateMvZhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
       (mOldP, mvZNewP, mvROldP, mvZOldP, mvZSourceP, nr, nz, dr, dz, dt, true);//Update z hat momentum positives
 
-      updateMvZhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*centerGridSize>>>
+      updateMvZhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
       (mOldN, mvZNewN, mvROldN, mvZOldN, mvZSourceN, nr, nz, dr, dz, dt, false);//Update z hat momentum negatives
 
   }
