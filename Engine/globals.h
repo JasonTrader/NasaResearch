@@ -9,6 +9,7 @@
 #define R_EVALS_PER_BLOCK 16
 #define Z_EVALS_PER_BLOCK 16
 #define EPSILON 1e-12
+#define q 1.60217662e-19
 //TODO update these
 #define kBoltz 1.38064852e-23
 #define Tp 20000
