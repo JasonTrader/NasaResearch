@@ -10,4 +10,13 @@
 #define Z_EVALS_PER_BLOCK 16
 #define EPSILON 1e-12
 
+enum U{
+  massP,
+  massN,
+  momentumPR,
+  momentumNR,
+  momentumPZ,
+  momentumNZ
+};
+
 #endif
