@@ -5,6 +5,7 @@
 #include "globals.h"
 #include "LaplacianVoltage.h"
 #include "MassConservation.h"
+#include "MomentumConservation.h"
 
 #define U_d(i,on) U_d+((2*i+on)*(nr+1)*(nz+1))
 #define U_h(i) U_h+(i*(nr+1)*(nz+1))
