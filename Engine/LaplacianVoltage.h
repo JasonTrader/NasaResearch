@@ -58,14 +58,14 @@ __global__ void updateVoltage(double *voltOld, double * voltNew, bool isRed, boo
   }//end of red/black
 }//end of update
 
-__global__ void updateEFields(double *Er, double *Ez, double *voltOld, double dr, double dz, int nr){
+__global__ void updateEFields(double *Er, double *Ez, double *voltNew, double dr, double dz, int nr){
   extern __shared__ double volt_s[];
   int i = blockIdx.x * Z_EVALS_PER_BLOCK + threadIdx.x;//x position index
   int k = blockIdx.y * R_EVALS_PER_BLOCK + threadIdx.y;//y position index
-  vShared(0,0) = vOld(i,k);//Bottom Left
-  vShared(1,0) = vOld((i+1),k);//Bottom right
-  vShared(0,1) = vOld(i,(k+1));//Top Left
-  vShared(1,1) = vOld((i+1),(k+1));//Top right
+  vShared(0,0) = vNew(i,k);//Bottom Left
+  vShared(1,0) = vNew((i+1),k);//Bottom right
+  vShared(0,1) = vNew(i,(k+1));//Top Left
+  vShared(1,1) = vNew((i+1),(k+1));//Top right
 
   __syncthreads();//wait for memory copy
 
@@ -105,10 +105,10 @@ void getNewVoltage(size_t cornerGridSize, size_t convSize, double *voltOld_d, do
   cudaMemcpy(volt_h, voltNew_d, cornerGridSize, cudaMemcpyDeviceToHost);//Copy results back
 }
 
-void getEfields(double *Er, double *Ez, double *voltOld, double dr, double dz, int nr, dim3 centerGridNoHalosBlockDim, dim3 centerGridNoHalosThreadDim){
+void getEfields(double *Er, double *Ez, double *voltNew, double dr, double dz, int nr, dim3 centerGridNoHalosBlockDim, dim3 centerGridNoHalosThreadDim){
 
   updateEFields<<<centerGridNoHalosBlockDim,centerGridNoHalosThreadDim,(Z_EVALS_PER_BLOCK+1)*(R_EVALS_PER_BLOCK+1)*sizeof(double)>>>
-  (Er, Ez, voltOld, dr, dz, nr);
+  (Er, Ez, voltNew, dr, dz, nr);
 }
 
 #endif
