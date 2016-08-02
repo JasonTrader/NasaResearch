@@ -1,5 +1,5 @@
-#ifndef _MASSCONSERVATION_
-#define _MASSCONSERVATION_
+#ifndef _MASSCONSERVATION_H_
+#define _MASSCONSERVATION_H_
 
 #include "globals.h"
 

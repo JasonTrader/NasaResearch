@@ -1,5 +1,5 @@
-#ifndef _MOMENTUMCONSERVATION_
-#define _MOMENTUMCONSERVATION_
+#ifndef _MOMENTUMCONSERVATION_H_
+#define _MOMENTUMCONSERVATION_H_
 
 #include "globals.h"
 

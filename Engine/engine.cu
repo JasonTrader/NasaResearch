@@ -6,6 +6,7 @@
 #include "LaplacianVoltage.h"
 #include "MassConservation.h"
 #include "MomentumConservation.h"
+#include "UCopy.h"
 
 #define U_d(i,on) U_d+((2*i+on)*(nr+1)*(nz+1))
 #define U_h(i) U_h+(i*(nr+1)*(nz+1))
@@ -13,7 +14,6 @@
 #define S_h(i) S_h+(i*(nr+1)*(nz+1))
 
 int main(){
-  printf("%d", o);
 
   //-------------------------------------------------------------------------//
   //get input
@@ -129,10 +129,12 @@ int main(){
     getMomentum(U_d(massP,o), U_d(momentumPR,n), U_d(momentumPZ,n), U_d(momentumPR,o), U_d(momentumPZ,o), S_d(momentumPR), S_d(momentumPZ),
       U_d(massN,o), U_d(momentumNR,n), U_d(momentumNZ,n), U_d(momentumNR,o), U_d(momentumNZ,o), S_d(momentumNR), S_d(momentumNZ),
       nr,nz,dr,dz,dt,centerGridWHalosBlockDim,centerGridWHalosThreadDim,centerGridSize);
-    //TODO Copy back U
 
-    //TODO Update secondary quantities
-    //QUESTION: is source/sink included?
+    UCopy(U_d(massP,o),U_d(massP,n), U_d(massN,o), U_d(massN,n),
+      U_d(momentumPR,o), U_d(momentumPR,n), U_d(momentumNR,o), U_d(momentumNR,n),
+      U_d(momentumPZ,o), U_d(momentumPZ,n), U_d(momentumNZ,o), U_d(momentumNZ,n), centerGridSize);
+
+    //TODO Source/Sink
 
     t+=dt;//update time
   }
