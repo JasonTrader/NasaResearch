@@ -5,6 +5,8 @@
 
 #define vOld(i,k) voltOld[k*(nr+2)+i]
 #define vNew(i,k) voltNew[k*(nr+2)+i]
+#define Er(i,k) Er[k*(nr+1)+i]
+#define Ez(i,k) Ez[k*(nr+1)+i]
 #define vShared(xOffset,yOffset) volt_s[(threadIdx.y+yOffset)*(R_EVALS_PER_BLOCK+2) + (threadIdx.x+xOffset)]
 #define OMEGA 1.5
 #define RELATIVE_ERROR 1e-3
@@ -56,6 +58,27 @@ __global__ void updateVoltage(double *voltOld, double * voltNew, bool isRed, boo
   }//end of red/black
 }//end of update
 
+__global__ void updateEFields(double *Er, double *Ez, double *voltOld, double dr, double dz, int nr){
+  extern __shared__ double volt_s[];
+  int i = blockIdx.x * zEvalsPerBlock + threadIdx.x;//x position index
+  int k = blockIdx.y * rEvalsPerBlock + threadIdx.y;//y position index
+  int sharedPos = threadIdx.y * (rEvalsPerBlock+1) + threadIdx.x;//Making 2D into 1D for the shared memory position in this block
+  vShared(0,0) = vOld(i,k);//Bottom Left
+  vShared(1,0) = vOld((i+1),k);//Bottom right
+  vShared(0,1) = vOld(i,(k+1));//Top Left
+  vShared(1,1) = vOld((i+1),(k+1));//Top right
+
+  __syncthreads();//wait for memory copy
+
+  double vtop, vbot, vleft, vright;
+  vtop = (vShared(0,1) + vShared(1,1))/2;
+  vbot = (vShared(0,0) + vShared(1,0))/2;
+  vleft = (vShared(0,0) + vShared(0,1))/2;
+  vright = (vShared(1,0) + vShared(1,1))/2;
+  Er(i,k) = -(vright-vleft)/dr;
+  Ez(i,k) = -(vtop-vbot)/dz;
+}
+
 void getNewVoltage(size_t cornerGridSize, size_t convSize, double *voltOld_d, double *voltNew_d,
   double *volt_h, dim3 cornerGridWHalosBlockDim, dim3 cornerGridWHalosThreadDim,
    bool *converge_d, bool *converge_h, int nr, int nz, double dr, double dz,
@@ -81,6 +104,12 @@ void getNewVoltage(size_t cornerGridSize, size_t convSize, double *voltOld_d, do
   }//converged
 
   cudaMemcpy(volt_h, voltNew_d, cornerGridSize, cudaMemcpyDeviceToHost);//Copy results back
+}
+
+void getEfields(double *Er, double *Ez, double *voltOld, double dr, double dz, int nr, dim3 centerGridNoHalosBlockDim, dim3 centerGridNoHalosThreadDim){
+
+  updateEFields<<<centerGridNoHalosBlockDim,centerGridNoHalosThreadDim,(Z_EVALS_PER_BLOCK+1)*(R_EVALS_PER_BLOCK+1)*sizeof(double)>>>
+  (Er, Ez, voltOld, dr, dz, nr);
 }
 
 #endif

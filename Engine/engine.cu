@@ -76,9 +76,12 @@ int main(){
 
   size_t centerGridSize = (nr+1)*(nz+1)*sizeof(double);
   dim3 centerGridWHalosThreadDim(R_EVALS_PER_BLOCK+2, Z_EVALS_PER_BLOCK+2);//+ 2 accounts for halo points
-  int centerGridWHalosBlockR = 1 + (nr+1-1)/R_EVALS_PER_BLOCK;//nr+1 = number internal r grid points
-  int centerGridWHalosBlockZ = 1 + (nz+1-1)/Z_EVALS_PER_BLOCK;//nz + 1 = number internal z grid points
-  dim3 centerGridWHalosBlockDim(centerGridWHalosBlockR, centerGridWHalosBlockZ);
+  int centerGridBlockR = 1 + (nr+1-1)/R_EVALS_PER_BLOCK;//nr+1 = number internal r grid points
+  int centerGridBlockZ = 1 + (nz+1-1)/Z_EVALS_PER_BLOCK;//nz + 1 = number internal z grid points
+  dim3 centerGridWHalosBlockDim(centerGridBlockR, centerGridBlockZ);
+  dim3 centerGridNoHalosThreadDim(R_EVALS_PER_BLOCK, Z_EVALS_PER_BLOCK);
+  dim3 centerGridNoHalosBlockDim(centerGridBlockR, centerGridBlockZ);
+
 
   //Voltage
   double *voltOld_d, *voltNew_d;//Device voltage grids
@@ -91,6 +94,12 @@ int main(){
   cudaMalloc(&converge_d, convergeSize);
   bool *converge_h;
   converge_h = (bool*)malloc(convergeSize);
+  double *Er_d, *Ez_d;
+  cudaMalloc(&Er_d,centerGridSize);
+  cudaMalloc(&Ez_d,centerGridSize);
+  double *Er_h, *Ez_h;
+  Er_h = (double*)malloc(centerGridSize);
+  Ez_h = (double*)malloc(centerGridSize);
 
   //Conserved Quantities
   size_t uSize = 6*centerGridSize;
@@ -146,6 +155,10 @@ int main(){
   cudaFree(voltOld_d);
   cudaFree(voltNew_d);
   free(volt_h);
+  cudaFree(Er_d);
+  cudaFree(Ez_d);
+  free(Er_h);
+  free(Ez_h);
   cudaFree(U_d);
   cudaFree(S_d);
   free(U_h);
