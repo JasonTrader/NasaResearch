@@ -6,12 +6,13 @@
 #include "LaplacianVoltage.h"
 #include "MassConservation.h"
 
-#define U_d(i) U_d+(i*(nr+1)*(nz+1))
+#define U_d(i,on) U_d+((2*i+on)*(nr+1)*(nz+1))
 #define U_h(i) U_h+(i*(nr+1)*(nz+1))
 #define S_d(i) S_d+(i*(nr+1)*(nz+1))
 #define S_h(i) S_h+(i*(nr+1)*(nz+1))
 
 int main(){
+  printf("%d", o);
 
   //-------------------------------------------------------------------------//
   //get input
@@ -93,7 +94,7 @@ int main(){
   //Conserved Quantities
   size_t uSize = 6*centerGridSize;
   double *U_d, *S_d;
-  cudaMalloc(&U_d,uSize);
+  cudaMalloc(&U_d,2*uSize);
   cudaMalloc(&S_d,uSize);
   double *U_h, *S_h;
   U_h = (double*)malloc(centerGridSize);
@@ -120,8 +121,8 @@ int main(){
 
 //---------------------------------------------------------------------------//
 
-    getMass(U_d(massP),U_d(momentumPR),U_d(momentumPZ),S_d(massP),
-      U_d(massN),U_d(momentumNR),U_d(momentumNZ),S_d(massN),
+    getMass(U_d(massP,o),U_d(massP,n),U_d(momentumPR,o),U_d(momentumPZ,o),S_d(massP),
+      U_d(massN,o),U_d(massN,n),U_d(momentumNR,o),U_d(momentumNZ,o),S_d(massN),
       nr,nz,dr,dz,dt,centerGridWHalosBlockDim,centerGridWHalosThreadDim,centerGridSize);
     //TODO U2
     //TODO U3
@@ -141,6 +142,10 @@ int main(){
   cudaFree(voltOld_d);
   cudaFree(voltNew_d);
   free(volt_h);
+  cudaFree(U_d);
+  cudaFree(S_d);
+  free(U_h);
+  free(S_h);
 
   return 0;
 }
