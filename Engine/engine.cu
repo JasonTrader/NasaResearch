@@ -3,6 +3,7 @@
 
 //Header files
 #include "globals.h"
+#include "init.h"
 #include "LaplacianVoltage.h"
 #include "sourceSink.h"
 #include "MassConservation.h"
@@ -18,43 +19,9 @@ int main(){
 
   //-------------------------------------------------------------------------//
   //get input
-
-  //Propellant (AMU) (currently not used)
-  scanf("%*s %*s %*s %*d");
-
-  //Mass flow rate (kg/s) (currently not used)
-  scanf("%*s %*s %*s %*lf");
-
-  //inner r (m)
-  double rIn;
-  scanf("%*s %*s %*s %lf", &rIn);
-
-  //outer r (m)
-  double rOut;
-  scanf("%*s %*s %*s %lf", &rOut);
-
-  //Total rlength
-  double lr = rIn - rOut;
-
-  //z length (m)
-  double lz;
-  scanf("%*s %*s %*s %lf", &lz);
-
-  //number of points in r direction
-  int nr;
-  scanf("%*s %*s %d", &nr);
-
-  //number of points in z direction
-  int nz;
-  scanf("%*s %*s %d", &nz);
-
-  //Start time (s)
-  double startTime;
-  scanf("%*s %*s %*s %lf", &startTime);
-
-  //End time (s)
-  double endTime;
-  scanf("%*s %*s %*s %lf", &endTime);
+  int atomicMass, nr, nz;
+  double rIn, rOut, lr, lz, startTime, endTime;
+  getInit(&atomicMass,&rIn,&rOut,&lr,&lz,&nr,&nz,&startTime,&endTime);
 
 //----------------------------------------------------------------------------//
   //variable setup
@@ -115,12 +82,19 @@ int main(){
 
 
 //---------------------------------------------------------------------------//
-//TODO calculate secondary initial quantities
-
-  //TODO calculate initial conserved quantities
-
-
-
+//TODO set secondary initial quantities
+  /*np = 1e14;//#/m^3
+  nn = 1e14;//#/m^3
+  Vpr = 0;//Initial velocity
+  Vnr = 0;//Initial velocity
+  Vpz = 0;//Initial velocity
+  Vnz = 0;//Initial velocity
+*/
+  //TODO calculate initial conserved quantities, from the set secondary
+/*U[i_c][k_c][massP] = r[i_c][k_c]*np;
+U[i_c][k_c][massN] = r[i_c][k_c]*nn;
+U[i_c][k_c]momentumPR] = r[i_c][k_c]*np*Vpr;
+*/
   //Time loop
   double t = startTime;
   while(t < endTime){
