@@ -17,6 +17,8 @@
 #define Tp 0.2*eV//Temperature of positive ion
 #define Tn 0.2*eV//Temperature of negative ion
 #define AMU 1.6726219e-27//1 AMU in kg
+#define r(i) i*dr+rin
+#define z(k) k*dz
 
 //U is a vector of conserved variables
 //This enum is placed in the order of which each of these conserved variables

@@ -27,11 +27,6 @@ int main(){
   //variable setup
   double dr = lr/(nr+1);
   double dz = lz/(nz+1);
-  double smallest = dr;
-  if(dz < dr)
-    smallest = dz;
-  double dt = 0.125*smallest*smallest*MU0;///eta;//to ensure stability
-  //TODO move to loop
 
 //---------------------------------------------------------------------------//
 // Memory setup
@@ -98,12 +93,14 @@ U[i_c][k_c]momentumPR] = r[i_c][k_c]*np*Vpr;
   //Time loop
   double t = startTime;
   while(t < endTime){
+    //TODO update dt
+    double dt = 1;
 
 
 //---------------------------------------------------------------------------//
     //Update Voltage
     getNewVoltage(cornerGridSize,convergeSize,voltOld_d,voltNew_d,U_d(massP,o),U_d(massN,o),volt_h,cornerGridWHalosBlockDim,
-      cornerGridWHalosThreadDim,converge_d,converge_h,nr,nz,dr,dz,
+      cornerGridWHalosThreadDim,converge_d,converge_h,nr,nz,dr,dz,rIn,
       cornerGridWHalosBlockR,cornerGridWHalosBlockZ);
 
 //---------------------------------------------------------------------------//

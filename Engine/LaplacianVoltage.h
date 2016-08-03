@@ -14,7 +14,7 @@
 
 
 //-----------------------------------------------------------------------------
-__global__ void updateVoltage(double *voltOld, double * voltNew, double *massp, double *massn, bool isRed, bool *converge, int nr, int nz, double dr, double dz, int blockZ){
+__global__ void updateVoltage(double *voltOld, double * voltNew, double *massp, double *massn, bool isRed, bool *converge, int nr, int nz, double dr, double dz, int blockZ, int rin){
   extern __shared__ double volt_s[];
   int i = blockIdx.x * R_EVALS_PER_BLOCK + threadIdx.x;//x position index
   int k = blockIdx.y * Z_EVALS_PER_BLOCK + threadIdx.y;//y position index
@@ -42,12 +42,12 @@ __global__ void updateVoltage(double *voltOld, double * voltNew, double *massp, 
         vNew(i,k) = (1-OMEGA)*vShared(0,0);//copy a weighted fraction of the old
         //Then update with the remaining fraction with the new
         double s = 0;//FIXME could be sped up with shared memory
-        s += (i+0.5)*nNet(i,k);//top left
-        s += (i+0.5)*nNet(i,(k-1));//bottom left
-        s += (i-0.5)*nNet((i-1),k);//top right
-        s += (i-0.5)*nNet((i-1),(k-1));//bottom right
+        s += r(i+0.5)*nNet(i,k);//top left
+        s += r(i+0.5)*nNet(i,(k-1));//bottom left
+        s += r(i-0.5)*nNet((i-1),k);//top right
+        s += r(i-0.5)*nNet((i-1),(k-1));//bottom right
         s *= q/E0;
-        s /= (4*i);//scale factor
+        s /= (4*(i));//scale factor
         s *= dr*dr*dz*dz/(2*(dr*dr+dz*dz));//coeffecient of pos i,j
         vNew(i,k) += OMEGA *(
           vShared(0,-1)*dr*dr/(2*(dr*dr+dz*dz)) + //Bottom
@@ -90,7 +90,7 @@ __global__ void updateEFields(double *Er, double *Ez, double *voltNew, double dr
 
 void getNewVoltage(size_t cornerGridSize, size_t convSize, double *voltOld_d, double *voltNew_d, double *massPOld, double * massNOld,
   double *volt_h, dim3 cornerGridWHalosBlockDim, dim3 cornerGridWHalosThreadDim,
-   bool *converge_d, bool *converge_h, int nr, int nz, double dr, double dz,
+   bool *converge_d, bool *converge_h, int nr, int nz, double dr, double dz, int rin,
    int blockR, int blockZ){
      //TODO implement boundary conditions
 
@@ -100,11 +100,11 @@ void getNewVoltage(size_t cornerGridSize, size_t convSize, double *voltOld_d, do
     cudaMemcpy(voltOld_d, voltNew_d, cornerGridSize, cudaMemcpyDeviceToDevice);
     //Evaluate red blocks
     updateVoltage<<<cornerGridWHalosBlockDim,cornerGridWHalosThreadDim,(Z_EVALS_PER_BLOCK+2)*(R_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-    (voltOld_d, voltNew_d, massPOld, massNOld, true, converge_d, nr, nz, dr, dz, blockZ);
+    (voltOld_d, voltNew_d, massPOld, massNOld, true, converge_d, nr, nz, dr, dz, blockZ, rin);
     cudaMemcpy(voltOld_d, voltNew_d, cornerGridSize, cudaMemcpyDeviceToDevice);
     //Evaluate black blocks
     updateVoltage<<<cornerGridWHalosBlockDim,cornerGridWHalosThreadDim,(Z_EVALS_PER_BLOCK+2)*(R_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-    (voltOld_d, voltNew_d, massPOld, massNOld, false, converge_d, nr, nz, dr, dz, blockZ);
+    (voltOld_d, voltNew_d, massPOld, massNOld, false, converge_d, nr, nz, dr, dz, blockZ, rin);
     //copy back converge check
     cudaMemcpy(converge_h, converge_d, convSize, cudaMemcpyDeviceToHost);
 
