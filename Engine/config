@@ -7,3 +7,5 @@ Rpoints = 50
 Zpoints = 50
 StartTime (s) = 0
 EndTime (s) = 1
+Vmax (V) = 110
+Vmin (V) = -110
