@@ -16,7 +16,7 @@ void getInit(int *atomicMass, double *rIn, double *rOut, double *lr, double *lz,
   scanf("%*s %*s %*s %lf", rOut);
 
   //Total rlength
-  *lr = *rIn - *rOut;
+  *lr = *rOut - *rIn;
 
   //z length (m)
   scanf("%*s %*s %*s %lf", lz);
