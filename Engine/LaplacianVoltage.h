@@ -27,7 +27,10 @@ __global__ void updateVoltage(double *voltOld, double * voltNew, double *massp, 
   }
   //Because value of center of nozzle is a floating potential copy the value that is above it
   if(i==0){
-    vShared(0,0) = vOld(i,k);//Zero gradient between r=0 and r=dr
+    if(rin == 0)
+      vShared(0,0) = vOld(1,k);//Zero gradient between r=0 and r=dr
+    else
+      vShared(0,0) = vOld(i,k);//insulated boundary
   }
   __syncthreads();//This is to ensure that all the threads have copied values from the previous iteration to shared memory
   if((i%2 == k%2) == isRed){//Red or not Red?
