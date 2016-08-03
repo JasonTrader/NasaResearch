@@ -64,7 +64,7 @@ int main(){
   if(dz < dr)
     smallest = dz;
   double dt = 0.125*smallest*smallest*MU0;///eta;//to ensure stability
-  //QUESTION eta?
+  //TODO move to loop
 
 //---------------------------------------------------------------------------//
 // Memory setup
@@ -115,10 +115,10 @@ int main(){
 
 
 //---------------------------------------------------------------------------//
+//TODO calculate secondary initial quantities
 
   //TODO calculate initial conserved quantities
 
-  //TODO calculate secondary initial quantities
 
 
   //Time loop
@@ -128,7 +128,7 @@ int main(){
 
 //---------------------------------------------------------------------------//
     //Update Voltage
-    getNewVoltage(cornerGridSize,convergeSize,voltOld_d,voltNew_d,volt_h,cornerGridWHalosBlockDim,
+    getNewVoltage(cornerGridSize,convergeSize,voltOld_d,voltNew_d,U_d(massP,o),U_d(massN,o),volt_h,cornerGridWHalosBlockDim,
       cornerGridWHalosThreadDim,converge_d,converge_h,nr,nz,dr,dz,
       cornerGridWHalosBlockR,cornerGridWHalosBlockZ);
 
