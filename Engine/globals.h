@@ -13,10 +13,10 @@
 #define q 1.60217662e-19//elementary charge
 #define E0 8.854187817e-12//epsilon naught
 #define kBoltz 1.38064852e-23//Boltzman's constant
-#define Tp 20000//Temperature of positive ion
-#define Tn 20000//Temperature of negative ion
-#define Mp 1.6726219e-27//Mass of 1 AMU positive ion
-#define Mn 1.6726219e-27//Mass of 1 AMU negative ion
+#define eV 11604//Kelvin to eV conversion
+#define Tp 0.2*eV//Temperature of positive ion
+#define Tn 0.2*eV//Temperature of negative ion
+#define AMU 1.6726219e-27//1 AMU in kg
 
 //U is a vector of conserved variables
 //This enum is placed in the order of which each of these conserved variables

@@ -109,7 +109,7 @@ U[i_c][k_c]momentumPR] = r[i_c][k_c]*np*Vpr;
 //---------------------------------------------------------------------------//
     getSourceSink(S_d(massP),S_d(massN),S_d(momentumPR),S_d(momentumNR),S_d(momentumPZ),S_d(momentumNZ),
       U_d(massP,n),U_d(massN,n),U_d(momentumPR,n),U_d(momentumNR,n),U_d(momentumPZ,n),U_d(momentumNZ,n),
-      Er_d, Ez_d,dr,nr,centerGridNoHalosBlockDim,centerGridNoHalosThreadDim);
+      Er_d, Ez_d,dr,nr,atomicMass,centerGridNoHalosBlockDim,centerGridNoHalosThreadDim);
 
     getMass(U_d(massP,o),U_d(massP,n),U_d(momentumPR,o),U_d(momentumPZ,o),S_d(massP),
       U_d(massN,o),U_d(massN,n),U_d(momentumNR,o),U_d(momentumNZ,o),S_d(massN),
@@ -117,7 +117,7 @@ U[i_c][k_c]momentumPR] = r[i_c][k_c]*np*Vpr;
 
     getMomentum(U_d(massP,o), U_d(momentumPR,n), U_d(momentumPZ,n), U_d(momentumPR,o), U_d(momentumPZ,o), S_d(momentumPR), S_d(momentumPZ),
       U_d(massN,o), U_d(momentumNR,n), U_d(momentumNZ,n), U_d(momentumNR,o), U_d(momentumNZ,o), S_d(momentumNR), S_d(momentumNZ),
-      nr,nz,dr,dz,dt,centerGridWHalosBlockDim,centerGridWHalosThreadDim);
+      nr,nz,dr,dz,dt,atomicMass,centerGridWHalosBlockDim,centerGridWHalosThreadDim);
 
     UCopy(U_d(massP,o),U_d(massP,n), U_d(massN,o), U_d(massN,n),
       U_d(momentumPR,o), U_d(momentumPR,n), U_d(momentumNR,o), U_d(momentumNR,n),
