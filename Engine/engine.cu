@@ -3,7 +3,9 @@
 
 //Header files
 #include "globals.h"
+#include "params.h"
 #include "init.h"
+#include "voltage.h"
 #include "LaplacianVoltage.h"
 #include "sourceSink.h"
 #include "MassConservation.h"
@@ -20,13 +22,8 @@ int main(){
   //-------------------------------------------------------------------------//
   //get input
   int atomicMass, nr, nz;
-  double rIn, rOut, lr, lz, startTime, endTime;
-  getInit(&atomicMass,&rIn,&rOut,&lr,&lz,&nr,&nz,&startTime,&endTime);
-
-//----------------------------------------------------------------------------//
-  //variable setup
-  double dr = lr/(nr+1);
-  double dz = lz/(nz+1);
+  double rIn, rOut, lr, lz, startTime, endTime, vMax, vMin,dr,dz;
+  getParams(&atomicMass,&rIn,&rOut,&lr,&lz,&nr,&nz,&startTime,&endTime,&dr,&dz,&vMax,&vMin);
 
 //---------------------------------------------------------------------------//
 // Memory setup
@@ -77,19 +74,15 @@ int main(){
 
 
 //---------------------------------------------------------------------------//
-//TODO set secondary initial quantities
-  /*np = 1e14;//#/m^3
-  nn = 1e14;//#/m^3
-  Vpr = 0;//Initial velocity
-  Vnr = 0;//Initial velocity
-  Vpz = 0;//Initial velocity
-  Vnz = 0;//Initial velocity
-*/
-  //TODO calculate initial conserved quantities, from the set secondary
-/*U[i_c][k_c][massP] = r[i_c][k_c]*np;
-U[i_c][k_c][massN] = r[i_c][k_c]*nn;
-U[i_c][k_c]momentumPR] = r[i_c][k_c]*np*Vpr;
-*/
+  double np = 1e14;//#/m^3
+  double nn = 1e14;//#/m^3
+  double Vpr = 0;//Initial velocity
+  double Vnr = 0;//Initial velocity
+  double Vpz = 0;//Initial velocity
+  double Vnz = 0;//Initial velocity
+
+  getInit(U_d(massP,o),U_d(massN,o),U_d(momentumPR,o),U_d(momentumNR,o),U_d(momentumPZ,o),U_d(momentumNZ,o),
+    np,nn,Vpr,Vnr,Vpz,Vnz,dr,rIn,nr,centerGridNoHalosBlockDim,centerGridNoHalosThreadDim);
   //Time loop
   double t = startTime;
   while(t < endTime){
@@ -105,7 +98,7 @@ U[i_c][k_c]momentumPR] = r[i_c][k_c]*np*Vpr;
 
 //---------------------------------------------------------------------------//
     getSourceSink(S_d(massP),S_d(massN),S_d(momentumPR),S_d(momentumNR),S_d(momentumPZ),S_d(momentumNZ),
-      U_d(massP,n),U_d(massN,n),U_d(momentumPR,n),U_d(momentumNR,n),U_d(momentumPZ,n),U_d(momentumNZ,n),
+      U_d(massP,o),U_d(massN,o),U_d(momentumPR,o),U_d(momentumNR,o),U_d(momentumPZ,o),U_d(momentumNZ,o),
       Er_d, Ez_d,dr,nr,atomicMass,centerGridNoHalosBlockDim,centerGridNoHalosThreadDim);
 
     getMass(U_d(massP,o),U_d(massP,n),U_d(momentumPR,o),U_d(momentumPZ,o),S_d(massP),
