@@ -1,6 +1,6 @@
 #ifndef _MOMENTUMCONSERVATION_H_
 #define _MOMENTUMCONSERVATION_H_
-
+//TODO ghost cells
 #include "globals.h"
 
 //NOTE there are nr+1 points per row of finite volumes

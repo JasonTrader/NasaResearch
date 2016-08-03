@@ -2,6 +2,7 @@
 #define _MASSCONSERVATION_H_
 
 #include "globals.h"
+//TODO ghost points
 
 //NOTE there are nr+1 points per row of finite volumes
 //also mass is a 2d grid compressed to one dimension
