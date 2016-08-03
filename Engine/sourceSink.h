@@ -24,8 +24,8 @@ __global__ void updateSourceSink(double *smp, double *smn, double *smvRp, double
   smn[gridPos] = 0;//Mass negative source
   smvRp[gridPos] = mp[gridPos]*((q*Er[gridPos]/Mp)-(getGamma()*vpr))+np*kBoltz*Tp/Mp;//Radial positive momentum source
   smvRn[gridPos] = mn[gridPos]*((-q*Er[gridPos]/Mn)-(getGamma()*vnr))+nn*kBoltz*Tn/Mn;//Radial negative momentum source
-  smvZp[gridPos] = mp[gridPos]*((q*Ez[gridPos]/Mp)-(getGamma()*vpz));
-  smvZn[gridPos] = mn[gridPos]*((-q*Ez[gridPos]/Mn)-(getGamma()*vnz));
+  smvZp[gridPos] = mp[gridPos]*((q*Ez[gridPos]/Mp)-(getGamma()*vpz));//Axial positive momentum source
+  smvZn[gridPos] = mn[gridPos]*((-q*Ez[gridPos]/Mn)-(getGamma()*vnz));//Axial negative momentum source
 }
 
 void getSourceSink(double *smp, double *smn, double *smvRp, double *smvRn, double *smvZp, double *smvZn,
