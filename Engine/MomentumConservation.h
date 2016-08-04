@@ -18,7 +18,10 @@
 #define mvZOldShared(xOffset,yOffset) mvZOld_s[(threadIdx.y+yOffset+1)*(R_EVALS_PER_BLOCK+2) + (threadIdx.x+xOffset+1)]
 #define mOldShared(xOffset,yOffset) mass_s[(threadIdx.y+yOffset+1)*(R_EVALS_PER_BLOCK+2) + (threadIdx.x+xOffset+1)]
 
-__global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double *mvZOld, double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity, int atomicMass, double rin){
+__global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double *mvZOld,
+  double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity,
+  int atomicMass, double rin, double propellantFlowRate){
+
   extern __shared__ double U_s[];
   double *mvROld_s, *mvZOld_s, *mass_s;
   mvROld_s = U_s;
@@ -33,12 +36,14 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
 
   double Mparticle;
   double Temperature;
+  double positiveIonMass = atomicMass*AMU;
+  double negativeIonMass = atomicMass*AMU;
   if(polarity){
-    Mparticle = atomicMass*AMU;
+    Mparticle = positiveIonMass;
     Temperature = Tp;
   }
   else{
-    Mparticle = atomicMass*AMU;
+    Mparticle = negativeIonMass;
     Temperature = Tn;
   }
 
@@ -47,6 +52,9 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
     if(k == -1 || k == nz+1){//z ghost point
       if(k==-1){
         //TODO Propellant flow rate
+        mvROldShared(0,0)=0;
+        mvZOldShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(positiveIonMass+negativeIonMass));
+        //QUESTION propellant velocity
       }
       else{
         mvROldShared(0,0)=2*mvROld(i,(k-1))-mvROld(i,(k-2));
@@ -98,7 +106,9 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
   }//end inside grid
 }
 
-__global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double *mvZOld, double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity, int atomicMass){
+__global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double *mvZOld,
+  double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity,
+  int atomicMass, double rin, double propellantFlowRate){
   extern __shared__ double U_s[];
   double *mvROld_s, *mvZOld_s, *mass_s;
   mvROld_s = U_s;
@@ -113,12 +123,14 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
 
   double Mparticle;
   double Temperature;
+  double positveIonMass = atomicMass*AMU;
+  double negativeIonMass = atomicMass*AMU;
   if(polarity){
-    Mparticle = atomicMass*AMU;
+    Mparticle = positveIonMass;
     Temperature = Tp;
   }
   else{
-    Mparticle = atomicMass*AMU;
+    Mparticle = negativeIonMass;
     Temperature = Tn;
   }
 
@@ -127,6 +139,9 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
       if(k == -1 || k == nz+1){//z ghost point
         if(k==-1){
           //TODO Propellant flow rate
+          mvROldShared(0,0)=0;
+          mvZOldShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(positveIonMass+negativeIonMass));
+          //QUESTION propellant velocity
         }
         else{
           mvROldShared(0,0)=2*mvROld(i,(k-1))-mvROld(i,(k-2));
@@ -174,20 +189,20 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
 
 void getMomentum(double *mOldP, double *mvRNewP, double *mvZNewP, double *mvROldP, double *mvZOldP, double *mvRSourceP, double *mvZSourceP,
   double *mOldN, double *mvRNewN, double *mvZNewN, double *mvROldN, double *mvZOldN, double *mvRSourceN, double *mvZSourceN,
-  int nr, int nz, double dr, double dz, double dt, int atomicMass, double rin,
+  int nr, int nz, double dr, double dz, double dt, int atomicMass, double rin, double propellantFlowRate,
   dim3 centerGridWHalosBlockDim, dim3 centerGridWHalosThreadDim){
 
       updateMvRhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldP, mvRNewP, mvROldP, mvZOldP, mvRSourceP, nr, nz, dr, dz, dt, true, atomicMass, rin);//Update r hat momentum positives
+      (mOldP, mvRNewP, mvROldP, mvZOldP, mvRSourceP, nr, nz, dr, dz, dt, true, atomicMass, rin, propellantFlowRate);//Update r hat momentum positives
 
       updateMvRhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldN, mvRNewN, mvROldN, mvZOldN, mvRSourceN, nr, nz, dr, dz, dt, false, atomicMass, rin);//Update r hat momentum negatives
+      (mOldN, mvRNewN, mvROldN, mvZOldN, mvRSourceN, nr, nz, dr, dz, dt, false, atomicMass, rin, propellantFlowRate);//Update r hat momentum negatives
 
       updateMvZhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldP, mvZNewP, mvROldP, mvZOldP, mvZSourceP, nr, nz, dr, dz, dt, true, atomicMass);//Update z hat momentum positives
+      (mOldP, mvZNewP, mvROldP, mvZOldP, mvZSourceP, nr, nz, dr, dz, dt, true, atomicMass, rin, propellantFlowRate);//Update z hat momentum positives
 
       updateMvZhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldN, mvZNewN, mvROldN, mvZOldN, mvZSourceN, nr, nz, dr, dz, dt, false, atomicMass);//Update z hat momentum negatives
+      (mOldN, mvZNewN, mvROldN, mvZOldN, mvZSourceN, nr, nz, dr, dz, dt, false, atomicMass, rin, propellantFlowRate);//Update z hat momentum negatives
 
   }
 

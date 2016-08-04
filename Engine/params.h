@@ -1,14 +1,14 @@
 #ifndef _PARAMS_H_
 #define _PARAMS_H_
 
-void getParams(int *atomicMass, double *rIn, double *rOut, double *lr, double *lz,
+void getParams(int *atomicMass, double *propellantFlowRate, double *rIn, double *rOut, double *lr, double *lz,
    int *nr, int *nz, double *startTime, double *endTime, double *dr, double *dz, double *vMax, double *vMin, double *biasF){
 
   //Propellant (AMU)
   scanf("%*s %*s %*s %d", atomicMass);
 
-  //Mass flow rate (kg/s) (currently not used)
-  scanf("%*s %*s %*s %*lf");
+  //Mass flow rate (kg/s)
+  scanf("%*s %*s %*s %lf", propellantFlowRate);
 
   //inner r (m)
   scanf("%*s %*s %*s %lf", rIn);

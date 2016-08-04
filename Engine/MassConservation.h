@@ -16,7 +16,10 @@
 #define mvRShared(xOffset,yOffset) mvR_s[(threadIdx.y+yOffset+1)*(R_EVALS_PER_BLOCK+2) + (threadIdx.x+xOffset+1)]
 #define mvZShared(xOffset,yOffset) mvZ_s[(threadIdx.y+yOffset+1)*(R_EVALS_PER_BLOCK+2) + (threadIdx.x+xOffset+1)]
 
-__global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ, double *massSource, int nr, int nz, double dr, double dz, double dt){
+__global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ,
+  double *massSource, int nr, int nz, double dr, double dz, double dt,
+  int atomicMass, double propellantFlowRate, double rin){
+
   extern __shared__ double mv_s[];
   double *mvR_s, *mvZ_s;
   mvR_s = mv_s;
@@ -34,7 +37,10 @@ __global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ, 
   if((i != -1 && i != nr+1)){// not r ghost point
     if(k == -1 || k == nz+1){//z ghost point
       if(k==-1){
-        //TODO Propellant flow rate
+        double positveIonMass = atomicMass*AMU;
+        double negativeIonMass = atomicMass*AMU;
+        mvRShared(0,0)=0;
+        mvZShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(positveIonMass+negativeIonMass));
       }
       else{
         mvRShared(0,0)=2*mvR(i,(k-1))-mvR(i,(k-2));
@@ -78,14 +84,15 @@ __global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ, 
 
 void getMass(double *mOldP, double *mNewP, double *mvRP, double *mvZP, double *massSourceP,
   double *mOldN, double * mNewN, double *mvRN, double *mvZN, double *massSourceN,
-  int nr, int nz, double dr, double dz, double dt,
+  int nr, int nz, double dr, double dz, double dt, int atomicMass,
+  double propellantFlowRate, double rin,
   dim3 centerGridWHalosBlockDim, dim3 centerGridWHalosThreadDim){
 
       updateMass<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,2*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldP, mNewP, mvRP, mvZP, massSourceP, nr, nz, dr, dz, dt);//Update mass positives
+      (mOldP, mNewP, mvRP, mvZP, massSourceP, nr, nz, dr, dz, dt, atomicMass, propellantFlowRate, rin);//Update mass positives
 
       updateMass<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,2*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldN, mNewN, mvRN, mvZN, massSourceN, nr, nz, dr, dz, dt);//Update mass negatives
+      (mOldN, mNewN, mvRN, mvZN, massSourceN, nr, nz, dr, dz, dt, atomicMass, propellantFlowRate, rin);//Update mass negatives
   }
 
 
