@@ -2,7 +2,6 @@
 #define _MASSCONSERVATION_H_
 
 #include "globals.h"
-//TODO ghost points
 
 //NOTE there are nr+1 points per row of finite volumes
 //also mass is a 2d grid compressed to one dimension
@@ -30,23 +29,21 @@ __global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ, 
   int k = blockIdx.y*Z_EVALS_PER_BLOCK + threadIdx.y - 1;
 
 //Copy data into shared memory for speedup
-  if((i == -1 || i == nr+1)){//r ghost point
-    if(k != -1 && k != nz + 1){//not corner point
-      mvRShared(0,0) = (i == -1 ? mvR(0,k) : mvR(nr,k));
-      mvZShared(0,0) = (i == -1 ? mvZ(0,k) : mvZ(nr,k));
+//Note points where i is -1 or nr+1 they are not needed because they are out
+//of the scope of the simulation.
+  if((i != -1 && i != nr+1)){// not r ghost point
+    if(k == -1 || k == nz+1){//z ghost point
+      if(k==-1){
+        //TODO Propellant flow rate
+      }
+      else{
+        //TODO gradient
+      }
     }
-  }
-
-  else if(k == -1 || k == nz+1){//z ghost point
-    if(i != -1 && i != nr + 1){//not corner point
-      mvRShared(0,0) = (k == -1 ? mvR(i,0) : mvR(i,nz));
-      mvZShared(0,0) = (k == -1 ? mvZ(i,0) : mvZ(i,nz));
+    else if(i > -1 && i< nr + 1 && k > -1 && k < nz + 1){//inside grid
+      mvRShared(0,0) = mvR(i,k);
+      mvZShared(0,0) = mvZ(i,k);
     }
-  }
-
-  else if(i > -1 && i< nr + 1 && k > -1 && k < nz + 1){//inside grid
-    mvRShared(0,0) = mvR(i,k);
-    mvZShared(0,0) = mvZ(i,k);
   }
 
   __syncthreads();//Wait for all memory copy to be done
@@ -58,17 +55,26 @@ __global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ, 
 
 
       //TODO add diffusivity error correction
+      if(i==0){
+        mvRLeft = 0;
+        mvRRight = 0.5*(mvRShared(0,0) + mvRShared(1,0));
+      }
+      else if(i==nr){
+        mvRLeft = 0.5*(mvRShared((-1),0) + mvRShared(0,0));
+        mvRRight = 0;
+      }
+      else{
+        mvRLeft = 0.5*(mvRShared((-1),0) + mvRShared(0,0));
+        mvRRight = 0.5*(mvRShared(0,0) + mvRShared(1,0));
+      }
       mvZBot = 0.5*(mvZShared(0,(-1)) + mvZShared(0,0));
       mvZTop = 0.5*(mvZShared(0,0) + mvZShared(0,1));
-      mvRLeft = 0.5*(mvRShared((-1),0) + mvRShared(0,0));
-      mvRRight = 0.5*(mvRShared(0,0) + mvRShared(1,0));
 
       mNew(i,k) = mOld(i,k) - dt*((mvRRight-mvRLeft)/dr + (mvZTop-mvZBot)/dz - massSource(i,k));
     }//end not halo points
   }//end inside grid
 }
 
-//TODO test function
 void getMass(double *mOldP, double *mNewP, double *mvRP, double *mvZP, double *massSourceP,
   double *mOldN, double * mNewN, double *mvRN, double *mvZN, double *massSourceN,
   int nr, int nz, double dr, double dz, double dt,

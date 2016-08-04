@@ -1,6 +1,6 @@
 #ifndef _MOMENTUMCONSERVATION_H_
 #define _MOMENTUMCONSERVATION_H_
-//TODO ghost cells
+
 #include "globals.h"
 
 //NOTE there are nr+1 points per row of finite volumes
@@ -43,26 +43,20 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
   }
 
 //Copy data into shared memory for speedup
-  if((i == -1 || i == nr+1)){//r ghost point
-    if(k != -1 && k != nz + 1){//not corner point
-      mvROldShared(0,0) = (i == -1 ? mvROld(0,k) : mvROld(nr,k));
-      mvZOldShared(0,0) = (i == -1 ? mvZOld(0,k) : mvZOld(nr,k));
-      mOldShared(0,0) = (i == -1 ? massOld(0,k) : massOld(nr,k));
+  if((i != -1 && i != nr+1)){//not r ghost point
+    else if(k == -1 || k == nz+1){//z ghost point
+      if(k==-1){
+        //TODO Propellant flow rate
+      }
+      else{
+        //TODO gradient
+      }
     }
-  }
-
-  else if(k == -1 || k == nz+1){//z ghost point
-    if(i != -1 && i != nr + 1){//not corner point
-      mvROldShared(0,0) = (k == -1 ? mvROld(i,0) : mvROld(i,nz));
-      mvZOldShared(0,0) = (k == -1 ? mvZOld(i,0) : mvZOld(i,nz));
-      mOldShared(0,0) = (k == -1 ? massOld(i,0) : massOld(i,nz));
+    else if(i > -1 && i< nr + 1 && k > -1 && k < nz + 1){//inside grid
+      mvROldShared(0,0) = mvROld(i,k);
+      mvZOldShared(0,0) = mvZOld(i,k);
+      mOldShared(0,0) = massOld(i,k);
     }
-  }
-
-  else if(i > -1 && i< nr + 1 && k > -1 && k < nz + 1){//inside grid
-    mvROldShared(0,0) = mvROld(i,k);
-    mvZOldShared(0,0) = mvZOld(i,k);
-    mOldShared(0,0) = massOld(i,k);
   }
 
   __syncthreads();//Wait for all memory copy to be done
@@ -74,8 +68,24 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
 
 
       //TODO add diffusivity error correction
-      leftFace = 0.5*((mvROldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0)+mOldShared((-1),0)*kBoltz*Temperature/Mparticle)+(mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle));
-      rightFace = 0.5*((mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvROldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)+mOldShared(1,0)*kBoltz*Temperature/Mparticle));
+      if(i==0){
+        if(rin==0){
+          leftFace = 0;
+          rightFace = 0.5*((mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvROldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)+mOldShared(1,0)*kBoltz*Temperature/Mparticle));
+        }
+        else{
+          leftFace=mOldShared(0,0)*kBoltz*Temperature/Mparticle;
+          rightFace = 0.5*((mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvROldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)+mOldShared(1,0)*kBoltz*Temperature/Mparticle));
+        }
+      }
+      else if(i==nr){
+        leftFace = 0.5*((mvROldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0)+mOldShared((-1),0)*kBoltz*Temperature/Mparticle)+(mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle));
+        rightFace=mOldShared(0,0)*kBoltz*Temperature/Mparticle;
+      }
+      else{
+        leftFace = 0.5*((mvROldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0)+mOldShared((-1),0)*kBoltz*Temperature/Mparticle)+(mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle));
+        rightFace = 0.5*((mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvROldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)+mOldShared(1,0)*kBoltz*Temperature/Mparticle));
+      }
       botFace = 0.5*((mvROldShared(0,(-1))*mvZOldShared(0,(-1))/mOldShared(0,(-1)))+(mvROldShared(0,0)*mvZOldShared(0,0)/mOldShared(0,0)));
       topFace = 0.5*((mvROldShared(0,0)*mvZOldShared(0,0)/mOldShared(0,0))+(mvROldShared(0,1)*mvZOldShared(0,1)/mOldShared(0,1)));
 
@@ -154,7 +164,6 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
   }//end inside grid
 }
 
-//TODO test function
 void getMomentum(double *mOldP, double *mvRNewP, double *mvZNewP, double *mvROldP, double *mvZOldP, double *mvRSourceP, double *mvZSourceP,
   double *mOldN, double *mvRNewN, double *mvZNewN, double *mvROldN, double *mvZOldN, double *mvRSourceN, double *mvZSourceN,
   int nr, int nz, double dr, double dz, double dt, int atomicMass,
