@@ -1,6 +1,7 @@
 #ifndef _LAPLACIANVOLTAGE_H_
 #define _LAPLACIANVOLTAGE_H_
 
+#include <math.h>
 #include "globals.h"
 
 #define vOld(i,k) voltOld[k*(nr+2)+i]
@@ -11,6 +12,15 @@
 #define nNet(i,k) massp[k*(nr+1)+i]-massn[k*(nr+1)+i]
 #define OMEGA 1.5
 #define RELATIVE_ERROR 1e-3
+
+
+
+double getInletVolt(double vmax, double vmin, double biasF, double currentTime){
+  double cycleTime = 1/biasF;
+  if(fmod(currentTime,cycleTime) < (cycleTime/2))
+    return vmax;
+  return vmin;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -91,12 +101,25 @@ __global__ void updateEFields(double *Er, double *Ez, double *voltNew, double dr
   Ez(i,k) = -(vtop-vbot)/dz;
 }
 
+__global__ void getGuess(double *voltNew, double voltBottom, int nr, double dvdk){
+  int i = blockIdx.x * R_EVALS_PER_BLOCK + threadIdx.x;//x position index
+  int k = blockIdx.y * Z_EVALS_PER_BLOCK + threadIdx.y;//y position index
+  vNew(i,k) = k*dvdk+voltBottom;
+}
+
 void getNewVoltage(size_t cornerGridSize, size_t convSize, double *voltOld_d, double *voltNew_d, double *massPOld, double * massNOld,
   double *volt_h, dim3 cornerGridWHalosBlockDim, dim3 cornerGridWHalosThreadDim,
-   bool *converge_d, bool *converge_h, int nr, int nz, double dr, double dz, int rin,
+   bool *converge_d, bool *converge_h, int nr, int nz, double dr, double dz, int rin, double vmax, double vmin, double biasF, double currentTime,
    int blockR, int blockZ){
-     //TODO implement boundary conditions
+     double voltTop = 0;
+     double voltBottom = getInletVolt(vmax,vmin,biasF,currentTime);
+     double dvdk = (voltTop-voltBottom)/(nr+1);
+     dim3 voltGuessThreadDim(R_EVALS_PER_BLOCK,Z_EVALS_PER_BLOCK);
+     int guessBlockR = 1 + (nr+2-1)/R_EVALS_PER_BLOCK;//nr+2 is the number of r points needed
+     int guessBlockZ = 1 + (nz+2-1)/Z_EVALS_PER_BLOCK;//nr+2 is the number of z points needed
+     dim3 voltGuessBlockDim(guessBlockR,guessBlockZ);
 
+     getGuess<<<voltGuessBlockDim,voltGuessThreadDim>>>(voltNew_d, voltBottom, nr, dvdk);
 
   bool didConverge = false;
   while(!didConverge){
