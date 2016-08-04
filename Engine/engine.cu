@@ -21,8 +21,9 @@ int main(){
   //-------------------------------------------------------------------------//
   //get input
   int atomicMass, nr, nz;
-  double propellantFlowRate,rIn, rOut, lr, lz, startTime, endTime, vMax, vMin,dr,dz,biasF;
+  double propellantFlowRate,rIn, rOut, lr, lz, startTime, endTime, vMax, vMin,dr,dz,biasF,a;
   getParams(&atomicMass,&propellantFlowRate,&rIn,&rOut,&lr,&lz,&nr,&nz,&startTime,&endTime,&dr,&dz,&vMax,&vMin,&biasF);
+  a = (Tp > Tn ? sqrt(2*kBoltz*Tp/MASS_POSITIVE_ION) : sqrt(2*kBoltz*Tn/MASS_POSITIVE_ION));//speed of sound
 
 //---------------------------------------------------------------------------//
 // Memory setup
@@ -102,11 +103,11 @@ int main(){
 
     getMass(U_d(massP,o),U_d(massP,n),U_d(momentumPR,o),U_d(momentumPZ,o),S_d(massP),
       U_d(massN,o),U_d(massN,n),U_d(momentumNR,o),U_d(momentumNZ,o),S_d(massN),
-      nr,nz,dr,dz,dt,atomicMass,propellantFlowRate,rIn,rOut,centerGridWHalosBlockDim,centerGridWHalosThreadDim);
+      nr,nz,dr,dz,dt,atomicMass,propellantFlowRate,rIn,rOut,a,centerGridWHalosBlockDim,centerGridWHalosThreadDim);
 
     getMomentum(U_d(massP,o), U_d(momentumPR,n), U_d(momentumPZ,n), U_d(momentumPR,o), U_d(momentumPZ,o), S_d(momentumPR), S_d(momentumPZ),
       U_d(massN,o), U_d(momentumNR,n), U_d(momentumNZ,n), U_d(momentumNR,o), U_d(momentumNZ,o), S_d(momentumNR), S_d(momentumNZ),
-      nr,nz,dr,dz,dt,atomicMass,rIn,rOut,propellantFlowRate,centerGridWHalosBlockDim,centerGridWHalosThreadDim);
+      nr,nz,dr,dz,dt,atomicMass,rIn,rOut,propellantFlowRate,a,centerGridWHalosBlockDim,centerGridWHalosThreadDim);
 
     UCopy(U_d(massP,o),U_d(massP,n), U_d(massN,o), U_d(massN,n),
       U_d(momentumPR,o), U_d(momentumPR,n), U_d(momentumNR,o), U_d(momentumNR,n),

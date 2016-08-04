@@ -18,7 +18,7 @@
 
 __global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ,
   double *massSource, int nr, int nz, double dr, double dz, double dt,
-  int atomicMass, double propellantFlowRate, double rin, double rout){
+  int atomicMass, double propellantFlowRate, double rin, double rout, double a){
 
   extern __shared__ double mv_s[];
   //divide mv_s in halh because CUDA only allows 1 shared vector
@@ -88,14 +88,14 @@ __global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ,
 void getMass(double *mOldP, double *mNewP, double *mvRP, double *mvZP, double *massSourceP,
   double *mOldN, double * mNewN, double *mvRN, double *mvZN, double *massSourceN,
   int nr, int nz, double dr, double dz, double dt, int atomicMass,
-  double propellantFlowRate, double rin, double rout,
+  double propellantFlowRate, double rin, double rout, double a,
   dim3 centerGridWHalosBlockDim, dim3 centerGridWHalosThreadDim){
 
       updateMass<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,2*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldP, mNewP, mvRP, mvZP, massSourceP, nr, nz, dr, dz, dt, atomicMass, propellantFlowRate, rin, rout);//Update mass positives
+      (mOldP, mNewP, mvRP, mvZP, massSourceP, nr, nz, dr, dz, dt, atomicMass, propellantFlowRate, rin, rout, a);//Update mass positives
 
       updateMass<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,2*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldN, mNewN, mvRN, mvZN, massSourceN, nr, nz, dr, dz, dt, atomicMass, propellantFlowRate, rin, rout);//Update mass negatives
+      (mOldN, mNewN, mvRN, mvZN, massSourceN, nr, nz, dr, dz, dt, atomicMass, propellantFlowRate, rin, rout, a);//Update mass negatives
   }
 
 
