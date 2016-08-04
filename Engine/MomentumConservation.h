@@ -18,7 +18,7 @@
 #define mvZOldShared(xOffset,yOffset) mvZOld_s[(threadIdx.y+yOffset+1)*(R_EVALS_PER_BLOCK+2) + (threadIdx.x+xOffset+1)]
 #define mOldShared(xOffset,yOffset) mass_s[(threadIdx.y+yOffset+1)*(R_EVALS_PER_BLOCK+2) + (threadIdx.x+xOffset+1)]
 
-__global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double *mvZOld, double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity, int atomicMass){
+__global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double *mvZOld, double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity, int atomicMass, double rin){
   extern __shared__ double U_s[];
   double *mvROld_s, *mvZOld_s, *mass_s;
   mvROld_s = U_s;
@@ -44,12 +44,14 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
 
 //Copy data into shared memory for speedup
   if((i != -1 && i != nr+1)){//not r ghost point
-    else if(k == -1 || k == nz+1){//z ghost point
+    if(k == -1 || k == nz+1){//z ghost point
       if(k==-1){
         //TODO Propellant flow rate
       }
       else{
-        //TODO gradient
+        mvROldShared(0,0)=2*mvROld(i,(k-1))-mvROld(i,(k-2));
+        mvZOldShared(0,0) = 2*mvZOld(i,(k-1))-mvZOld(i,(k-2));
+        mOldShared(0,0) = 2*massOld(i,(k-1))-massOld(i,(k-2));
       }
     }
     else if(i > -1 && i< nr + 1 && k > -1 && k < nz + 1){//inside grid
@@ -97,7 +99,6 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
 }
 
 __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double *mvZOld, double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity, int atomicMass){
-  //TODO ghost points
   extern __shared__ double U_s[];
   double *mvROld_s, *mvZOld_s, *mass_s;
   mvROld_s = U_s;
@@ -121,28 +122,24 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
     Temperature = Tn;
   }
 
-//Copy data into shared memory for speedup
-  if((i == -1 || i == nr+1)){//r ghost point
-    if(k != -1 && k != nz + 1){//not corner point
-      mvROldShared(0,0) = (i == -1 ? mvROld(0,k) : mvROld(nr,k));
-      mvZOldShared(0,0) = (i == -1 ? mvZOld(0,k) : mvZOld(nr,k));
-      mOldShared(0,0) = (i == -1 ? massOld(0,k) : massOld(nr,k));
+  //Copy data into shared memory for speedup
+    if((i != -1 && i != nr+1)){//not r ghost point
+      if(k == -1 || k == nz+1){//z ghost point
+        if(k==-1){
+          //TODO Propellant flow rate
+        }
+        else{
+          mvROldShared(0,0)=2*mvROld(i,(k-1))-mvROld(i,(k-2));
+          mvZOldShared(0,0) = 2*mvZOld(i,(k-1))-mvZOld(i,(k-2));
+          mOldShared(0,0) = 2*massOld(i,(k-1))-massOld(i,(k-2));
+        }
+      }
+      else if(i > -1 && i< nr + 1 && k > -1 && k < nz + 1){//inside grid
+        mvROldShared(0,0) = mvROld(i,k);
+        mvZOldShared(0,0) = mvZOld(i,k);
+        mOldShared(0,0) = massOld(i,k);
+      }
     }
-  }
-
-  else if(k == -1 || k == nz+1){//z ghost point
-    if(i != -1 && i != nr + 1){//not corner point
-      mvROldShared(0,0) = (k == -1 ? mvROld(i,0) : mvROld(i,nz));
-      mvZOldShared(0,0) = (k == -1 ? mvZOld(i,0) : mvZOld(i,nz));
-      mOldShared(0,0) = (k == -1 ? massOld(i,0) : massOld(i,nz));
-    }
-  }
-
-  else if(i > -1 && i< nr + 1 && k > -1 && k < nz + 1){//inside grid
-    mvROldShared(0,0) = mvROld(i,k);
-    mvZOldShared(0,0) = mvZOld(i,k);
-    mOldShared(0,0) = massOld(i,k);
-  }
 
   __syncthreads();//Wait for all memory copy to be done
 
@@ -153,8 +150,18 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
 
 
       //TODO add diffusivity error correction
-      leftFace = 0.5*((mvZOldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0))+(mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)));
-      rightFace = 0.5*((mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0))+(mvZOldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)));
+      if(i==0){
+        leftFace = 0;
+        rightFace = 0.5*((mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0))+(mvZOldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)));
+      }
+      else if(i==nr){
+        leftFace = 0.5*((mvZOldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0))+(mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)));
+        rightFace = 0;
+      }
+      else{
+        leftFace = 0.5*((mvZOldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0))+(mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)));
+        rightFace = 0.5*((mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0))+(mvZOldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)));
+      }
       botFace = 0.5*((mvZOldShared(0,(-1))*mvZOldShared(0,(-1))/mOldShared(0,(-1))+mOldShared(0,(-1))*kBoltz*Temperature/Mparticle)+(mvZOldShared(0,0)*mvZOldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle));
       topFace = 0.5*((mvZOldShared(0,0)*mvZOldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvZOldShared(0,1)*mvZOldShared(0,1)/mOldShared(0,1)+mOldShared(0,1)*kBoltz*Temperature/Mparticle));
 
@@ -167,14 +174,14 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
 
 void getMomentum(double *mOldP, double *mvRNewP, double *mvZNewP, double *mvROldP, double *mvZOldP, double *mvRSourceP, double *mvZSourceP,
   double *mOldN, double *mvRNewN, double *mvZNewN, double *mvROldN, double *mvZOldN, double *mvRSourceN, double *mvZSourceN,
-  int nr, int nz, double dr, double dz, double dt, int atomicMass,
+  int nr, int nz, double dr, double dz, double dt, int atomicMass, double rin,
   dim3 centerGridWHalosBlockDim, dim3 centerGridWHalosThreadDim){
 
       updateMvRhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldP, mvRNewP, mvROldP, mvZOldP, mvRSourceP, nr, nz, dr, dz, dt, true, atomicMass);//Update r hat momentum positives
+      (mOldP, mvRNewP, mvROldP, mvZOldP, mvRSourceP, nr, nz, dr, dz, dt, true, atomicMass, rin);//Update r hat momentum positives
 
       updateMvRhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldN, mvRNewN, mvROldN, mvZOldN, mvRSourceN, nr, nz, dr, dz, dt, false, atomicMass);//Update r hat momentum negatives
+      (mOldN, mvRNewN, mvROldN, mvZOldN, mvRSourceN, nr, nz, dr, dz, dt, false, atomicMass, rin);//Update r hat momentum negatives
 
       updateMvZhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
       (mOldP, mvZNewP, mvROldP, mvZOldP, mvZSourceP, nr, nz, dr, dz, dt, true, atomicMass);//Update z hat momentum positives

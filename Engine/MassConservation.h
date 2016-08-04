@@ -37,7 +37,8 @@ __global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ, 
         //TODO Propellant flow rate
       }
       else{
-        //TODO gradient
+        mvRShared(0,0)=2*mvR(i,(k-1))-mvR(i,(k-2));
+        mvZShared(0,0)=2*mvZ(i,(k-1))-mvZ(i,(k-2));
       }
     }
     else if(i > -1 && i< nr + 1 && k > -1 && k < nz + 1){//inside grid
