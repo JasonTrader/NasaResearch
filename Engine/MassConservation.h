@@ -21,6 +21,7 @@ __global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ,
   int atomicMass, double propellantFlowRate, double rin){
 
   extern __shared__ double mv_s[];
+  //divide mv_s in halh because CUDA only allows 1 shared vector
   double *mvR_s, *mvZ_s;
   mvR_s = mv_s;
   mvZ_s = mv_s + ((R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2));
@@ -36,18 +37,21 @@ __global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ,
 //of the scope of the simulation.
   if((i != -1 && i != nr+1)){// not r ghost point
     if(k == -1 || k == nz+1){//z ghost point
-      if(k==-1){
+      if(k==-1){//Inlet of thruster
+        //Can be changed later to accomodate difference of 2e mass
         double positveIonMass = atomicMass*AMU;
         double negativeIonMass = atomicMass*AMU;
-        mvRShared(0,0)=0;
-        mvZShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(positveIonMass+negativeIonMass));
+        mvRShared(0,0)=0;//NO r direction velocity at inlet
+        mvZShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(positveIonMass+negativeIonMass));//Dependent on flow rate
       }
-      else{
+      else{//Thruster exit
+        //Use continuous gradient to approximate
         mvRShared(0,0)=2*mvR(i,(k-1))-mvR(i,(k-2));
         mvZShared(0,0)=2*mvZ(i,(k-1))-mvZ(i,(k-2));
       }
     }
     else if(i > -1 && i< nr + 1 && k > -1 && k < nz + 1){//inside grid
+      //Move value to shared memory
       mvRShared(0,0) = mvR(i,k);
       mvZShared(0,0) = mvZ(i,k);
     }
@@ -62,26 +66,27 @@ __global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ,
 
 
       //TODO add diffusivity error correction
-      if(i==0){
-        mvRLeft = 0;
+      if(i==0){//Center of rocket
+        mvRLeft = 0;//No streams crossing center because of azimuthal consistency
         mvRRight = 0.5*(mvRShared(0,0) + mvRShared(1,0));
       }
-      else if(i==nr){
+      else if(i==nr){//Top of rocket
         mvRLeft = 0.5*(mvRShared((-1),0) + mvRShared(0,0));
-        mvRRight = 0;
+        mvRRight = 0;//No streams exiting rocket through the top
       }
-      else{
+      else{//Inside rocket
         mvRLeft = 0.5*(mvRShared((-1),0) + mvRShared(0,0));
         mvRRight = 0.5*(mvRShared(0,0) + mvRShared(1,0));
       }
       mvZBot = 0.5*(mvZShared(0,(-1)) + mvZShared(0,0));
       mvZTop = 0.5*(mvZShared(0,0) + mvZShared(0,1));
 
-      mNew(i,k) = mOld(i,k) - dt*((mvRRight-mvRLeft)/dr + (mvZTop-mvZBot)/dz - massSource(i,k));
+      mNew(i,k) = mOld(i,k) - dt*((mvRRight-mvRLeft)/dr + (mvZTop-mvZBot)/dz - massSource(i,k));//Calculates value for next time step
     }//end not halo points
   }//end inside grid
 }
 
+//Calls for both positives and negatives
 void getMass(double *mOldP, double *mNewP, double *mvRP, double *mvZP, double *massSourceP,
   double *mOldN, double * mNewN, double *mvRN, double *mvZN, double *massSourceN,
   int nr, int nz, double dr, double dz, double dt, int atomicMass,
