@@ -2,7 +2,7 @@
 #define _PARAMS_H_
 
 void getParams(int *atomicMass, double *rIn, double *rOut, double *lr, double *lz,
-   int *nr, int *nz, double *startTime, double *endTime, double *dr, double *dz, double *vMax, double *vMin){
+   int *nr, int *nz, double *startTime, double *endTime, double *dr, double *dz, double *vMax, double *vMin, double *biasF){
 
   //Propellant (AMU)
   scanf("%*s %*s %*s %d", atomicMass);
@@ -39,6 +39,9 @@ void getParams(int *atomicMass, double *rIn, double *rOut, double *lr, double *l
 
   //Vmin (V)
   scanf("%*s %*s %*s %lf", vMin);
+
+  //Bias Frequency (Hz)
+  scanf("%*s %*s %*s %lf", biasF);
 
 
   *dr = *lr/(*nr+1);
