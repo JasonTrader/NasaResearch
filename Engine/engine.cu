@@ -5,7 +5,6 @@
 #include "globals.h"
 #include "params.h"
 #include "init.h"
-#include "voltage.h"
 #include "LaplacianVoltage.h"
 #include "sourceSink.h"
 #include "MassConservation.h"
@@ -22,8 +21,8 @@ int main(){
   //-------------------------------------------------------------------------//
   //get input
   int atomicMass, nr, nz;
-  double rIn, rOut, lr, lz, startTime, endTime, vMax, vMin,dr,dz;
-  getParams(&atomicMass,&rIn,&rOut,&lr,&lz,&nr,&nz,&startTime,&endTime,&dr,&dz,&vMax,&vMin);
+  double rIn, rOut, lr, lz, startTime, endTime, vMax, vMin,dr,dz,biasF;
+  getParams(&atomicMass,&rIn,&rOut,&lr,&lz,&nr,&nz,&startTime,&endTime,&dr,&dz,&vMax,&vMin,&biasF);
 
 //---------------------------------------------------------------------------//
 // Memory setup
@@ -93,7 +92,7 @@ int main(){
 //---------------------------------------------------------------------------//
     //Update Voltage
     getNewVoltage(cornerGridSize,convergeSize,voltOld_d,voltNew_d,U_d(massP,o),U_d(massN,o),volt_h,cornerGridWHalosBlockDim,
-      cornerGridWHalosThreadDim,converge_d,converge_h,nr,nz,dr,dz,rIn,
+      cornerGridWHalosThreadDim,converge_d,converge_h,nr,nz,dr,dz,rIn,vMax,vMin,biasF,t,
       cornerGridWHalosBlockR,cornerGridWHalosBlockZ);
 
 //---------------------------------------------------------------------------//
@@ -107,7 +106,7 @@ int main(){
 
     getMomentum(U_d(massP,o), U_d(momentumPR,n), U_d(momentumPZ,n), U_d(momentumPR,o), U_d(momentumPZ,o), S_d(momentumPR), S_d(momentumPZ),
       U_d(massN,o), U_d(momentumNR,n), U_d(momentumNZ,n), U_d(momentumNR,o), U_d(momentumNZ,o), S_d(momentumNR), S_d(momentumNZ),
-      nr,nz,dr,dz,dt,atomicMass,centerGridWHalosBlockDim,centerGridWHalosThreadDim);
+      nr,nz,dr,dz,dt,atomicMass,rIn,centerGridWHalosBlockDim,centerGridWHalosThreadDim);
 
     UCopy(U_d(massP,o),U_d(massP,n), U_d(massN,o), U_d(massN,n),
       U_d(momentumPR,o), U_d(momentumPR,n), U_d(momentumNR,o), U_d(momentumNR,n),
