@@ -15,7 +15,7 @@
 
 
 
-double getInletVolt(double vmax, double vmin, double biasF, double currentTime){
+double getInletVolt(double vmax, double vmin, double biasF, double currentTime){//asssumes 50% duty cycle
   double cycleTime = 1/biasF;
   if(fmod(currentTime,cycleTime) < (cycleTime/2))
     return vmax;
@@ -97,11 +97,11 @@ __global__ void updateEFields(double *Er, double *Ez, double *voltNew, double dr
   vbot = (vShared(0,0) + vShared(1,0))/2;
   vleft = (vShared(0,0) + vShared(0,1))/2;
   vright = (vShared(1,0) + vShared(1,1))/2;
-  Er(i,k) = -(vright-vleft)/dr;
-  Ez(i,k) = -(vtop-vbot)/dz;
+  Er(i,k) = -(vright-vleft)/dr;//negative gradient
+  Ez(i,k) = -(vtop-vbot)/dz;//negative gradient
 }
 
-__global__ void getGuess(double *voltNew, double voltBottom, int nr, double dvdk){
+__global__ void getGuess(double *voltNew, double voltBottom, int nr, double dvdk){//initial guess for SOR method
   int i = blockIdx.x * R_EVALS_PER_BLOCK + threadIdx.x;//x position index
   int k = blockIdx.y * Z_EVALS_PER_BLOCK + threadIdx.y;//y position index
   vNew(i,k) = k*dvdk+voltBottom;

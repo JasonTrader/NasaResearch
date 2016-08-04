@@ -5,15 +5,15 @@ __global__ void initCenterQuantities(double *np, double *nn, double *npr,
   double *nnr, double *npz, double *nnz, int nump, int numn, double vpr,
   double vnr, double vpz, double vnz, double dr, double rin, double nr){
 
-  int i = blockIdx.x*R_EVALS_PER_BLOCK + threadIdx.x;
-  int k = blockIdx.y*Z_EVALS_PER_BLOCK + threadIdx.y;
+  int i = blockIdx.x*R_EVALS_PER_BLOCK + threadIdx.x;//i represents r
+  int k = blockIdx.y*Z_EVALS_PER_BLOCK + threadIdx.y;//k represents z
   int gridPos = k*(nr+1)+i;
-  np[gridPos] = nump*((i+0.5)+rin)*dr;
-  nn[gridPos] = numn*((i+0.5)+rin)*dr;
-  npr[gridPos] = nump*((i+0.5)+rin)*dr*vpr;
-  nnr[gridPos] = numn*((i+0.5)+rin)*dr*vnr;
-  npz[gridPos] = nump*((i+0.5)+rin)*dr*vpz;
-  nnz[gridPos] = numn*((i+0.5)+rin)*dr*vnz;
+  np[gridPos] = nump*((i+0.5)+rin)*dr;//rnp
+  nn[gridPos] = numn*((i+0.5)+rin)*dr;//rnn
+  npr[gridPos] = nump*((i+0.5)+rin)*dr*vpr;//rnpvr
+  nnr[gridPos] = numn*((i+0.5)+rin)*dr*vnr;//rnnvr
+  npz[gridPos] = nump*((i+0.5)+rin)*dr*vpz;//rnpvz
+  nnz[gridPos] = numn*((i+0.5)+rin)*dr*vnz;//rnnvz
 }
 
 void getInit(double *np, double *nn, double *npr, double *nnr, double *npz, double *nnz,

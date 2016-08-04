@@ -39,10 +39,8 @@ __global__ void updateMass(double *mOld, double*mNew, double *mvR, double *mvZ,
     if(k == -1 || k == nz+1){//z ghost point
       if(k==-1){//Inlet of thruster
         //Can be changed later to accomodate difference of 2e mass
-        double positveIonMass = atomicMass*AMU;
-        double negativeIonMass = atomicMass*AMU;
         mvRShared(0,0)=0;//NO r direction velocity at inlet
-        mvZShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(positveIonMass+negativeIonMass));//Dependent on flow rate
+        mvZShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(MASS_POSITIVE_ION+MASS_NEGATIVE_ION));//Dependent on flow rate
       }
       else{//Thruster exit
         //Use continuous gradient to approximate

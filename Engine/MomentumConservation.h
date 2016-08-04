@@ -23,6 +23,7 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
   int atomicMass, double rin, double propellantFlowRate){
 
   extern __shared__ double U_s[];
+  //divide up shared memory
   double *mvROld_s, *mvZOld_s, *mass_s;
   mvROld_s = U_s;
   mvZOld_s = U_s + ((R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2));
@@ -36,33 +37,33 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
 
   double Mparticle;
   double Temperature;
-  double positiveIonMass = atomicMass*AMU;
-  double negativeIonMass = atomicMass*AMU;
-  if(polarity){
-    Mparticle = positiveIonMass;
+  if(polarity){//positive ions
+    Mparticle = MASS_POSITIVE_ION;
     Temperature = Tp;
   }
-  else{
-    Mparticle = negativeIonMass;
+  else{//negative ions
+    Mparticle = MASS_NEGATIVE_ION;
     Temperature = Tn;
   }
 
 //Copy data into shared memory for speedup
   if((i != -1 && i != nr+1)){//not r ghost point
     if(k == -1 || k == nz+1){//z ghost point
-      if(k==-1){
+      if(k==-1){//thruster inlet
         //TODO Propellant flow rate
-        mvROldShared(0,0)=0;
-        mvZOldShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(positiveIonMass+negativeIonMass));
+        mvROldShared(0,0)=0;//no radial velocity at inlet
+        mvZOldShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(MASS_POSITIVE_ION+MASS_NEGATIVE_ION));//Based on propellant flow rate
         //QUESTION propellant velocity
       }
-      else{
+      else{//thruster exit
+        //use continuous gradient to approximate
         mvROldShared(0,0)=2*mvROld(i,(k-1))-mvROld(i,(k-2));
         mvZOldShared(0,0) = 2*mvZOld(i,(k-1))-mvZOld(i,(k-2));
         mOldShared(0,0) = 2*massOld(i,(k-1))-massOld(i,(k-2));
       }
     }
     else if(i > -1 && i< nr + 1 && k > -1 && k < nz + 1){//inside grid
+      //copy to shared memory
       mvROldShared(0,0) = mvROld(i,k);
       mvZOldShared(0,0) = mvZOld(i,k);
       mOldShared(0,0) = massOld(i,k);
@@ -78,21 +79,23 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
 
 
       //TODO add diffusivity error correction
-      if(i==0){
-        if(rin==0){
-          leftFace = 0;
+      if(i==0){//thruster inlet
+        if(rin==0){//center
+          leftFace = 0;//no streams across center
           rightFace = 0.5*((mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvROldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)+mOldShared(1,0)*kBoltz*Temperature/Mparticle));
         }
-        else{
+        else{//center of pipe
+          //r is not 0 because center of pipe is insulated
           leftFace=mOldShared(0,0)*kBoltz*Temperature/Mparticle;//'r' is already multiplied in the mOldShared
           rightFace = 0.5*((mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvROldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)+mOldShared(1,0)*kBoltz*Temperature/Mparticle));
         }
       }
-      else if(i==nr){
+      else if(i==nr){//thruster top
         leftFace = 0.5*((mvROldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0)+mOldShared((-1),0)*kBoltz*Temperature/Mparticle)+(mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle));
+        //no streams through top of rocket
         rightFace=mOldShared(0,0)*kBoltz*Temperature/Mparticle;//'r' is already multiplied in the mOldShared
       }
-      else{
+      else{//inside thruster
         leftFace = 0.5*((mvROldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0)+mOldShared((-1),0)*kBoltz*Temperature/Mparticle)+(mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle));
         rightFace = 0.5*((mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvROldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)+mOldShared(1,0)*kBoltz*Temperature/Mparticle));
       }
@@ -101,7 +104,7 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
 
 
 
-      mvRNew(i,k) = mvROld(i,k) - dt*((rightFace-leftFace)/dr + (topFace-botFace)/dz - mvSource(i,k));
+      mvRNew(i,k) = mvROld(i,k) - dt*((rightFace-leftFace)/dr + (topFace-botFace)/dz - mvSource(i,k));//update new value
     }//end not halo points
   }//end inside grid
 }
@@ -110,6 +113,7 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
   double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity,
   int atomicMass, double rin, double propellantFlowRate){
   extern __shared__ double U_s[];
+  //divide up shared memory
   double *mvROld_s, *mvZOld_s, *mass_s;
   mvROld_s = U_s;
   mvZOld_s = U_s + ((R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2));
@@ -123,33 +127,33 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
 
   double Mparticle;
   double Temperature;
-  double positveIonMass = atomicMass*AMU;
-  double negativeIonMass = atomicMass*AMU;
-  if(polarity){
-    Mparticle = positveIonMass;
+  if(polarity){//positive ions
+    Mparticle = MASS_POSITIVE_ION;
     Temperature = Tp;
   }
-  else{
-    Mparticle = negativeIonMass;
+  else{//negative ions
+    Mparticle = MASS_NEGATIVE_ION;
     Temperature = Tn;
   }
 
   //Copy data into shared memory for speedup
     if((i != -1 && i != nr+1)){//not r ghost point
       if(k == -1 || k == nz+1){//z ghost point
-        if(k==-1){
+        if(k==-1){//thruster inlet
           //TODO Propellant flow rate
-          mvROldShared(0,0)=0;
-          mvZOldShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(positveIonMass+negativeIonMass));
+          mvROldShared(0,0)=0;//no radial velocity
+          mvZOldShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(MASS_POSITIVE_ION+MASS_NEGATIVE_ION));
           //QUESTION propellant velocity
         }
-        else{
+        else{//thruster exit
+          //use continuous gradient to approximate
           mvROldShared(0,0)=2*mvROld(i,(k-1))-mvROld(i,(k-2));
           mvZOldShared(0,0) = 2*mvZOld(i,(k-1))-mvZOld(i,(k-2));
           mOldShared(0,0) = 2*massOld(i,(k-1))-massOld(i,(k-2));
         }
       }
       else if(i > -1 && i< nr + 1 && k > -1 && k < nz + 1){//inside grid
+        //move to shared memory
         mvROldShared(0,0) = mvROld(i,k);
         mvZOldShared(0,0) = mvZOld(i,k);
         mOldShared(0,0) = massOld(i,k);
@@ -165,13 +169,13 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
 
 
       //TODO add diffusivity error correction
-      if(i==0){
-        leftFace = 0;
+      if(i==0){//center of thruster
+        leftFace = 0;//no streams across the center of thruster
         rightFace = 0.5*((mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0))+(mvZOldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)));
       }
-      else if(i==nr){
+      else if(i==nr){//top of thruster
         leftFace = 0.5*((mvZOldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0))+(mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)));
-        rightFace = 0;
+        rightFace = 0;//no streams out the top of the thruster
       }
       else{
         leftFace = 0.5*((mvZOldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0))+(mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)));
@@ -182,7 +186,7 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
 
 
 
-      mvZNew(i,k) = mvZOld(i,k) - dt*((rightFace-leftFace)/dr + (topFace-botFace)/dz - mvSource(i,k));
+      mvZNew(i,k) = mvZOld(i,k) - dt*((rightFace-leftFace)/dr + (topFace-botFace)/dz - mvSource(i,k));//update
     }//end not halo points
   }//end inside grid
 }
