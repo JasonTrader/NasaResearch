@@ -74,13 +74,13 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
           rightFace = 0.5*((mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvROldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)+mOldShared(1,0)*kBoltz*Temperature/Mparticle));
         }
         else{
-          leftFace=mOldShared(0,0)*kBoltz*Temperature/Mparticle;
+          leftFace=mOldShared(0,0)*kBoltz*Temperature/Mparticle;//'r' is already multiplied in the mOldShared
           rightFace = 0.5*((mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvROldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)+mOldShared(1,0)*kBoltz*Temperature/Mparticle));
         }
       }
       else if(i==nr){
         leftFace = 0.5*((mvROldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0)+mOldShared((-1),0)*kBoltz*Temperature/Mparticle)+(mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle));
-        rightFace=mOldShared(0,0)*kBoltz*Temperature/Mparticle;
+        rightFace=mOldShared(0,0)*kBoltz*Temperature/Mparticle;//'r' is already multiplied in the mOldShared
       }
       else{
         leftFace = 0.5*((mvROldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0)+mOldShared((-1),0)*kBoltz*Temperature/Mparticle)+(mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle));
@@ -97,6 +97,7 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
 }
 
 __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double *mvZOld, double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity, int atomicMass){
+  //TODO ghost points
   extern __shared__ double U_s[];
   double *mvROld_s, *mvZOld_s, *mass_s;
   mvROld_s = U_s;
