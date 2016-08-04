@@ -20,7 +20,7 @@
 
 __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double *mvZOld,
   double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity,
-  int atomicMass, double rin, double propellantFlowRate){
+  int atomicMass, double rin, double rout, double propellantFlowRate){
 
   extern __shared__ double U_s[];
   //divide up shared memory
@@ -50,10 +50,10 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
   if((i != -1 && i != nr+1)){//not r ghost point
     if(k == -1 || k == nz+1){//z ghost point
       if(k==-1){//thruster inlet
-        //TODO Propellant flow rate
         mvROldShared(0,0)=0;//no radial velocity at inlet
-        mvZOldShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(MASS_POSITIVE_ION+MASS_NEGATIVE_ION));//Based on propellant flow rate
-        //QUESTION propellant velocity
+        mvZOldShared(0,0)=INLET_MOMENTUM((i+0.5));//Based on propellant flow rate
+        double vInlet = sqrt(2*kBoltz*Temperature/MASS_POSITIVE_ION);//Speed of incoming particle
+        mOldShared(0,0)=mvZOldShared(0,0)/vInlet;//Incoming mass
       }
       else{//thruster exit
         //use continuous gradient to approximate
@@ -111,7 +111,7 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
 
 __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double *mvZOld,
   double *mvSource, int nr, int nz, double dr, double dz, double dt, bool polarity,
-  int atomicMass, double rin, double propellantFlowRate){
+  int atomicMass, double rin, double rout, double propellantFlowRate){
   extern __shared__ double U_s[];
   //divide up shared memory
   double *mvROld_s, *mvZOld_s, *mass_s;
@@ -140,10 +140,10 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
     if((i != -1 && i != nr+1)){//not r ghost point
       if(k == -1 || k == nz+1){//z ghost point
         if(k==-1){//thruster inlet
-          //TODO Propellant flow rate
           mvROldShared(0,0)=0;//no radial velocity
-          mvZOldShared(0,0)=propellantFlowRate/(PI*r((i+0.5))*(MASS_POSITIVE_ION+MASS_NEGATIVE_ION));
-          //QUESTION propellant velocity
+          mvZOldShared(0,0)=INLET_MOMENTUM((i+0.5));//Based on propellant flow rate
+          double vInlet = sqrt(2*kBoltz*Temperature/MASS_POSITIVE_ION);//Speed of incoming particle
+          mOldShared(0,0)=mvZOldShared(0,0)/vInlet;//Incoming mass
         }
         else{//thruster exit
           //use continuous gradient to approximate
@@ -193,20 +193,20 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
 
 void getMomentum(double *mOldP, double *mvRNewP, double *mvZNewP, double *mvROldP, double *mvZOldP, double *mvRSourceP, double *mvZSourceP,
   double *mOldN, double *mvRNewN, double *mvZNewN, double *mvROldN, double *mvZOldN, double *mvRSourceN, double *mvZSourceN,
-  int nr, int nz, double dr, double dz, double dt, int atomicMass, double rin, double propellantFlowRate,
+  int nr, int nz, double dr, double dz, double dt, int atomicMass, double rin, double rout, double propellantFlowRate,
   dim3 centerGridWHalosBlockDim, dim3 centerGridWHalosThreadDim){
 
       updateMvRhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldP, mvRNewP, mvROldP, mvZOldP, mvRSourceP, nr, nz, dr, dz, dt, true, atomicMass, rin, propellantFlowRate);//Update r hat momentum positives
+      (mOldP, mvRNewP, mvROldP, mvZOldP, mvRSourceP, nr, nz, dr, dz, dt, true, atomicMass, rin, rout, propellantFlowRate);//Update r hat momentum positives
 
       updateMvRhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldN, mvRNewN, mvROldN, mvZOldN, mvRSourceN, nr, nz, dr, dz, dt, false, atomicMass, rin, propellantFlowRate);//Update r hat momentum negatives
+      (mOldN, mvRNewN, mvROldN, mvZOldN, mvRSourceN, nr, nz, dr, dz, dt, false, atomicMass, rin, rout, propellantFlowRate);//Update r hat momentum negatives
 
       updateMvZhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldP, mvZNewP, mvROldP, mvZOldP, mvZSourceP, nr, nz, dr, dz, dt, true, atomicMass, rin, propellantFlowRate);//Update z hat momentum positives
+      (mOldP, mvZNewP, mvROldP, mvZOldP, mvZSourceP, nr, nz, dr, dz, dt, true, atomicMass, rin, rout, propellantFlowRate);//Update z hat momentum positives
 
       updateMvZhat<<<centerGridWHalosBlockDim,centerGridWHalosThreadDim,3*(R_EVALS_PER_BLOCK+2)*(Z_EVALS_PER_BLOCK+2)*sizeof(double)>>>
-      (mOldN, mvZNewN, mvROldN, mvZOldN, mvZSourceN, nr, nz, dr, dz, dt, false, atomicMass, rin, propellantFlowRate);//Update z hat momentum negatives
+      (mOldN, mvZNewN, mvROldN, mvZOldN, mvZSourceN, nr, nz, dr, dz, dt, false, atomicMass, rin, rout, propellantFlowRate);//Update z hat momentum negatives
 
   }
 

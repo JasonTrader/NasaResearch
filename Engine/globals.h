@@ -19,6 +19,10 @@
 #define AMU 1.6726219e-27//1 AMU in kg
 #define r(i) i*dr+rin
 #define z(k) k*dz
+//Can be updated later to incorporate 2e mass difference
+#define MASS_POSITIVE_ION atomicMass*AMU
+#define MASS_NEGATIVE_ION atomicMass*AMU
+#define INLET_MOMENTUM(i) propellantFlowRate*r(i)/(PI*(rout*rout-rin*rin)*(MASS_POSITIVE_ION+MASS_NEGATIVE_ION))
 
 //U is a vector of conserved variables
 //This enum is placed in the order of which each of these conserved variables
