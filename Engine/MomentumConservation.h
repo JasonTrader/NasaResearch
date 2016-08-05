@@ -75,9 +75,9 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
     if(threadIdx.x != 0 && threadIdx.x != R_EVALS_PER_BLOCK + 1 && threadIdx.y != 0 && threadIdx.y != Z_EVALS_PER_BLOCK + 1){//not halo points
       //Calculate fluxes
       double botFace, topFace, leftFace, rightFace;
+      double Dbot, Dtop, Dleft, Dright;
 
 
-      //TODO add diffusivity error correction
       if(i==0){//thruster inlet
         if(rin==0){//center
           leftFace = 0;//no streams across center
@@ -88,22 +88,40 @@ __global__ void updateMvRhat(double *mOld, double*mvRNew, double *mvROld, double
           leftFace=mOldShared(0,0)*kBoltz*Temperature/Mparticle;//'r' is already multiplied in the mOldShared
           rightFace = 0.5*((mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvROldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)+mOldShared(1,0)*kBoltz*Temperature/Mparticle));
         }
+        //Numerical dampening
+        Dleft = 0;
+        Dright = 0.5*0.5*((mvROldShared(1,0)/mOldShared((i+1),k)+a)+(mvROldShared(0,0)/mOldShared(i,k)+a))*(mvROldShared((i+1),k)-mvROldShared(i,k));
       }
       else if(i==nr){//thruster top
         leftFace = 0.5*((mvROldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0)+mOldShared((-1),0)*kBoltz*Temperature/Mparticle)+(mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle));
         //no streams through top of rocket
         rightFace=mOldShared(0,0)*kBoltz*Temperature/Mparticle;//'r' is already multiplied in the mOldShared
+        //Numerical dampening
+        Dleft = 0.5*0.5*((mvROldShared(0,0)/mOldShared(i,k)+a)+(mvROldShared((-1),0)/mOldShared((i-1),k)+a))*(mvROldShared(i,k)-mvROldShared((i-1),k));
+        Dright = 0;
       }
       else{//inside thruster
         leftFace = 0.5*((mvROldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0)+mOldShared((-1),0)*kBoltz*Temperature/Mparticle)+(mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle));
         rightFace = 0.5*((mvROldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvROldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)+mOldShared(1,0)*kBoltz*Temperature/Mparticle));
+        //Numerical dampening
+        Dleft = 0.5*0.5*((mvROldShared(0,0)/mOldShared(i,k)+a)+(mvROldShared((-1),0)/mOldShared((i-1),k)+a))*(mvROldShared(i,k)-mvROldShared((i-1),k));
+        Dright = 0.5*0.5*((mvROldShared(1,0)/mOldShared((i+1),k)+a)+(mvROldShared(0,0)/mOldShared(i,k)+a))*(mvROldShared((i+1),k)-mvROldShared(i,k));
       }
       botFace = 0.5*((mvROldShared(0,(-1))*mvZOldShared(0,(-1))/mOldShared(0,(-1)))+(mvROldShared(0,0)*mvZOldShared(0,0)/mOldShared(0,0)));
       topFace = 0.5*((mvROldShared(0,0)*mvZOldShared(0,0)/mOldShared(0,0))+(mvROldShared(0,1)*mvZOldShared(0,1)/mOldShared(0,1)));
+      //Numerical dampening
+      Dbot = 0.5*0.5*((mvZOldShared(0,0)/mOldShared(i,k)+a)+(mvZOldShared(0,(-1))/mOldShared(i,(k-1))+a))*(mvROldShared(i,k)-mvROldShared(i,(k-1)));
+      Dtop = 0.5*0.5*((mvZOldShared(0,1)/mOldShared(i,(k+1))+a)+(mvZOldShared(0,0)/mOldShared(i,k)+a))*(mvROldShared(i,(k+1))-mvROldShared(i,k));
 
+      //apply numerical dampening
+      double HrLeft, HrRight, HzBot, HzTop;
 
+      HrLeft = leftFace - Dleft;
+      HrRight = rightFace - Dright;
+      HzBot = botFace - Dbot;
+      HzTop = topFace - Dtop;
 
-      mvRNew(i,k) = mvROld(i,k) - dt*((rightFace-leftFace)/dr + (topFace-botFace)/dz - mvSource(i,k));//update new value
+      mvRNew(i,k) = mvROld(i,k) - dt*((HrRight-HrLeft)/dr + (HzTop-HzBot)/dz - mvSource(i,k));//update new value
     }//end not halo points
   }//end inside grid
 }
@@ -164,27 +182,47 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
     if(threadIdx.x != 0 && threadIdx.x != R_EVALS_PER_BLOCK + 1 && threadIdx.y != 0 && threadIdx.y != Z_EVALS_PER_BLOCK + 1){//not halo points
       //Calculate fluxes
       double botFace, topFace, leftFace, rightFace;
+      double Dbot, Dtop, Dleft, Dright;
 
 
       //TODO add diffusivity error correction
       if(i==0){//center of thruster
         leftFace = 0;//no streams across the center of thruster
         rightFace = 0.5*((mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0))+(mvZOldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)));
+        //Numerical dampening
+        Dleft = 0;
+        Dright = 0.5*0.5*((mvROldShared(1,0)/mOldShared((i+1),k)+a)+(mvROldShared(0,0)/mOldShared(i,k)+a))*(mvZOldShared((i+1),k)-mvZOldShared(i,k));
       }
       else if(i==nr){//top of thruster
         leftFace = 0.5*((mvZOldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0))+(mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)));
         rightFace = 0;//no streams out the top of the thruster
+        //Numerical dampening
+        Dleft = 0.5*0.5*((mvROldShared(0,0)/mOldShared(i,k)+a)+(mvROldShared((-1),0)/mOldShared((i-1),k)+a))*(mvZOldShared(i,k)-mvZOldShared((i-1),k));
+        Dright = 0;
       }
-      else{
+      else{//inside thruster
         leftFace = 0.5*((mvZOldShared((-1),0)*mvROldShared((-1),0)/mOldShared((-1),0))+(mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0)));
         rightFace = 0.5*((mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0))+(mvZOldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)));
+        //Numerical dampening
+        Dleft = 0.5*0.5*((mvROldShared(0,0)/mOldShared(i,k)+a)+(mvROldShared((-1),0)/mOldShared((i-1),k)+a))*(mvZOldShared(i,k)-mvZOldShared((i-1),k));
+        Dright = 0.5*0.5*((mvROldShared(1,0)/mOldShared((i+1),k)+a)+(mvROldShared(0,0)/mOldShared(i,k)+a))*(mvZOldShared((i+1),k)-mvZOldShared(i,k));
       }
       botFace = 0.5*((mvZOldShared(0,(-1))*mvZOldShared(0,(-1))/mOldShared(0,(-1))+mOldShared(0,(-1))*kBoltz*Temperature/Mparticle)+(mvZOldShared(0,0)*mvZOldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle));
       topFace = 0.5*((mvZOldShared(0,0)*mvZOldShared(0,0)/mOldShared(0,0)+mOldShared(0,0)*kBoltz*Temperature/Mparticle)+(mvZOldShared(0,1)*mvZOldShared(0,1)/mOldShared(0,1)+mOldShared(0,1)*kBoltz*Temperature/Mparticle));
+      //Numerical dampening
+      Dbot = 0.5*0.5*((mvZOldShared(0,0)/mOldShared(i,k)+a)+(mvZOldShared(0,(-1))/mOldShared(i,(k-1))+a))*(mvZOldShared(i,k)-mvZOldShared(i,(k-1)));
+      Dtop = 0.5*0.5*((mvZOldShared(0,1)/mOldShared(i,(k+1))+a)+(mvZOldShared(0,0)/mOldShared(i,k)+a))*(mvZOldShared(i,(k+1))-mvZOldShared(i,k));
+
+      //apply numerical dampening
+      double HrLeft, HrRight, HzBot, HzTop;
+
+      HrLeft = leftFace - Dleft;
+      HrRight = rightFace - Dright;
+      HzBot = botFace - Dbot;
+      HzTop = topFace - Dtop;
 
 
-
-      mvZNew(i,k) = mvZOld(i,k) - dt*((rightFace-leftFace)/dr + (topFace-botFace)/dz - mvSource(i,k));//update
+      mvZNew(i,k) = mvZOld(i,k) - dt*((HrRight-HrLeft)/dr + (HzTop-HzBot)/dz - mvSource(i,k));//update
     }//end not halo points
   }//end inside grid
 }
