@@ -185,7 +185,6 @@ __global__ void updateMvZhat(double *mOld, double*mvZNew, double *mvROld, double
       double Dbot, Dtop, Dleft, Dright;
 
 
-      //TODO add diffusivity error correction
       if(i==0){//center of thruster
         leftFace = 0;//no streams across the center of thruster
         rightFace = 0.5*((mvZOldShared(0,0)*mvROldShared(0,0)/mOldShared(0,0))+(mvZOldShared(1,0)*mvROldShared(1,0)/mOldShared(1,0)));

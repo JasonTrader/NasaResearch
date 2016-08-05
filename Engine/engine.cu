@@ -10,6 +10,7 @@
 #include "MassConservation.h"
 #include "MomentumConservation.h"
 #include "UCopy.h"
+#include "dtFind.h"
 
 #define U_d(i,on) U_d+((2*i+on)*(nr+1)*(nz+1))
 #define U_h(i) U_h+(i*(nr+1)*(nz+1))
@@ -72,6 +73,12 @@ int main(){
   U_h = (double*)malloc(centerGridSize);
   S_h = (double*)malloc(centerGridSize);
 
+  //dt
+  double *dtVec_d;
+  cudaMalloc(&dtVec_d,centerGridBlockR*centerGridBlockZ*sizeof(double));
+  double * dtVec_h;
+  dtVec_h = (double*)malloc(centerGridBlockR*centerGridBlockZ*sizeof(double));
+
 
 //---------------------------------------------------------------------------//
   double np = 1e14;//#/m^3
@@ -87,7 +94,10 @@ int main(){
   double t = startTime;
   while(t < endTime){
     //TODO update dt
-    double dt = 1;
+    double dt = getDt(U_d(massP,o), U_d(massN,o), U_d(momentumPR,o),
+      U_d(momentumNR,o), U_d(momentumPZ,o), U_d(momentumNZ,o),
+      dtVec_d, dtVec_h, centerGridBlockR, centerGridBlockZ,
+      dr,dz,nr,nz,a,centerGridNoHalosBlockDim,centerGridNoHalosThreadDim);
 
 
 //---------------------------------------------------------------------------//
