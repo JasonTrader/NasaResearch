@@ -93,7 +93,6 @@ int main(){
   //Time loop
   double t = startTime;
   while(t < endTime){
-    //TODO update dt
     double dt = getDt(U_d(massP,o), U_d(massN,o), U_d(momentumPR,o),
       U_d(momentumNR,o), U_d(momentumPZ,o), U_d(momentumNZ,o),
       dtVec_d, dtVec_h, centerGridBlockR, centerGridBlockZ,
