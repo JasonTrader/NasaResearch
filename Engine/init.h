@@ -1,28 +1,34 @@
 #ifndef _INIT_H_
 #define _INIT_H_
 
-__global__ void initCenterQuantities(double *np, double *nn, double *npr,
-  double *nnr, double *npz, double *nnz, int nump, int numn, double vpr,
+__global__ void initCenterQuantities(double *rnp, double *rnn, double *rnpvpr,
+  double *rnnvnr, double *rnpvpz, double *rnnvnz, double nump, double numn, double vpr,
   double vnr, double vpz, double vnz, double dr, double rin, double nr){
 
   int i = blockIdx.x*R_EVALS_PER_BLOCK + threadIdx.x;//i represents r
   int k = blockIdx.y*Z_EVALS_PER_BLOCK + threadIdx.y;//k represents z
   int gridPos = k*(nr+1)+i;
-  np[gridPos] = nump*((i+0.5)+rin)*dr;//rnp
-  nn[gridPos] = numn*((i+0.5)+rin)*dr;//rnn
-  npr[gridPos] = nump*((i+0.5)+rin)*dr*vpr;//rnpvr
-  nnr[gridPos] = numn*((i+0.5)+rin)*dr*vnr;//rnnvr
-  npz[gridPos] = nump*((i+0.5)+rin)*dr*vpz;//rnpvz
-  nnz[gridPos] = numn*((i+0.5)+rin)*dr*vnz;//rnnvz
+  rnp[gridPos] = nump*(r((i+0.5)));//rnp
+  rnn[gridPos] = numn*(r((i+0.5)));//rnn
+  rnpvpr[gridPos] = nump*(r((i+0.5)))*vpr;//rnpvr
+  rnnvnr[gridPos] = numn*(r((i+0.5)))*vnr;//rnnvr
+  rnpvpz[gridPos] = nump*(r((i+0.5)))*vpz;//rnpvz
+  rnnvnz[gridPos] = numn*(r((i+0.5)))*vnz;//rnnvz
+
+  if(i==0 && k==1){
+    printf("%e\n", rnp[gridPos]);
+  }
+//  __syncthreads();
 }
 
-void getInit(double *np, double *nn, double *npr, double *nnr, double *npz, double *nnz,
-  int nump, int numn, double vpr,
+
+void getInit(double *rnp, double *rnn, double *rnpvpr, double *rnnvnr, double *rnpvpz, double *rnnvnz,
+  double nump, double numn, double vpr,
   double vnr, double vpz, double vnz, double dr, double rin, double nr,
   dim3 centerGridNoHalosBlockDim, dim3 centerGridNoHalosThreadDim){
 
   initCenterQuantities<<<centerGridNoHalosBlockDim,centerGridNoHalosThreadDim>>>
-    (np,nn,npr,nnr,npz,nnz,nump,numn,vpr,vnr,vpz,vnz,dr,rin,nr);
+    (rnp,rnn,rnpvpr,rnnvnr,rnpvpz,rnnvnz,nump,numn,vpr,vnr,vpz,vnz,dr,rin,nr);
 }
 
 #endif

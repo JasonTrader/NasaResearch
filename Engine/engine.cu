@@ -24,7 +24,7 @@ int main(){
   int atomicMass, nr, nz;
   double propellantFlowRate,rIn, rOut, lr, lz, startTime, endTime, vMax, vMin,dr,dz,biasF,a;
   getParams(&atomicMass,&propellantFlowRate,&rIn,&rOut,&lr,&lz,&nr,&nz,&startTime,&endTime,&dr,&dz,&vMax,&vMin,&biasF);
-  a = (Tp > Tn ? sqrt(2*kBoltz*Tp/MASS_POSITIVE_ION) : sqrt(2*kBoltz*Tn/MASS_POSITIVE_ION));//speed of sound
+  a = (Tp > Tn ? sqrt(2*kBoltz*Tp/(MASS_POSITIVE_ION)) : sqrt(2*kBoltz*Tn/(MASS_POSITIVE_ION)));//speed of sound
 
 //---------------------------------------------------------------------------//
 // Memory setup
@@ -81,23 +81,27 @@ int main(){
 
 
 //---------------------------------------------------------------------------//
-  double np = 1e14;//#/m^3
-  double nn = 1e14;//#/m^3
+  double np = 1e12;//#/m^3
+  double nn = 1e12;//#/m^3
   double Vpr = 0;//Initial velocity
   double Vnr = 0;//Initial velocity
   double Vpz = 0;//Initial velocity
   double Vnz = 0;//Initial velocity
 
+  double tottime = endTime - startTime;
+  double outputInterval = tottime/100;
+  int outputCount = 0;
+
   getInit(U_d(massP,o),U_d(massN,o),U_d(momentumPR,o),U_d(momentumNR,o),U_d(momentumPZ,o),U_d(momentumNZ,o),
     np,nn,Vpr,Vnr,Vpz,Vnz,dr,rIn,nr,centerGridNoHalosBlockDim,centerGridNoHalosThreadDim);
+
   //Time loop
   double t = startTime;
-  while(t < endTime){
+  //while(t < endTime){
     double dt = getDt(U_d(massP,o), U_d(massN,o), U_d(momentumPR,o),
       U_d(momentumNR,o), U_d(momentumPZ,o), U_d(momentumNZ,o),
       dtVec_d, dtVec_h, centerGridBlockR, centerGridBlockZ,
       dr,dz,nr,nz,a,centerGridNoHalosBlockDim,centerGridNoHalosThreadDim);
-
 
 //---------------------------------------------------------------------------//
     //Update Voltage
@@ -123,10 +127,38 @@ int main(){
       U_d(momentumPZ,o), U_d(momentumPZ,n), U_d(momentumNZ,o), U_d(momentumNZ,n), centerGridSize);
 
 
+    if(t > outputCount*outputInterval){
+      //printf("%lf\n",t);
+      outputCount++;
+      //TODO Output step data
+    }
     t+=dt;//update time
-    //TODO Output results
+  //}
+
+  //TODO output final data
+  cudaMemcpy(U_h(massP), U_d(massP,n), centerGridSize, cudaMemcpyDeviceToHost);
+  cudaMemcpy(U_h(massN), U_d(massN,n), centerGridSize, cudaMemcpyDeviceToHost);
+  FILE *finalOutput;
+  finalOutput = fopen("finalResults.txt","w");
+  int i, j;
+  for(i=0; i<nz; i++){
+    fprintf(finalOutput, "%lf ", (i+0.5)*dz);
+  }
+  fprintf(finalOutput, "%lf\n", (i+0.5)*dz);
+
+  for(j=0; j<nr; j++){
+    fprintf(finalOutput, "%lf ", (j+0.5)*dz);
+  }
+  fprintf(finalOutput, "%lf\n", (j+0.5)*dz);
+
+  for(i = 0; i<nz+1; i++){
+    for(j=0; j<nr; j++){
+      fprintf(finalOutput, "%lf ", q*((U_h(massP))[i*(nr+1)+j]-(U_h(massN))[i*(nr+1)+j]));
+    }
+    fprintf(finalOutput, "%lf\n", q*((U_h(massP))[i*(nr+1)+j]-(U_h(massN))[i*(nr+1)+j]));
   }
 
+  fclose(finalOutput);
 
 //---------------------------------------------------------------------------//
 //Free memory
@@ -141,6 +173,8 @@ int main(){
   cudaFree(S_d);
   free(U_h);
   free(S_h);
+  cudaFree(dtVec_d);
+  free(dtVec_h);
 
   return 0;
 }

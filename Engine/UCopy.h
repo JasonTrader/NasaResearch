@@ -7,12 +7,12 @@ void UCopy(double *mOldP,double *mNewP, double *mOldN, double *mNewN,
   double *mvROldP, double *mvRNewP, double *mvROldN, double *mvRNewN,
   double *mvZOldP, double *mvZNewP, double *mvZOldN, double *mvZNewN, size_t centerGridSize){
 
-  cudaMemcpy(mNewP, mOldP, centerGridSize, cudaMemcpyDeviceToDevice);
-  cudaMemcpy(mNewN, mOldN, centerGridSize, cudaMemcpyDeviceToDevice);
-  cudaMemcpy(mvRNewP, mvROldP, centerGridSize, cudaMemcpyDeviceToDevice);
-  cudaMemcpy(mvRNewN, mvROldN, centerGridSize, cudaMemcpyDeviceToDevice);
-  cudaMemcpy(mvZNewP, mvZOldP, centerGridSize, cudaMemcpyDeviceToDevice);
-  cudaMemcpy(mvZNewN, mvZOldN, centerGridSize, cudaMemcpyDeviceToDevice);
+  cudaMemcpy(mOldP, mNewP, centerGridSize, cudaMemcpyDeviceToDevice);
+  cudaMemcpy(mOldN, mNewN, centerGridSize, cudaMemcpyDeviceToDevice);
+  cudaMemcpy(mvROldP, mvRNewP, centerGridSize, cudaMemcpyDeviceToDevice);
+  cudaMemcpy(mvROldN, mvRNewN, centerGridSize, cudaMemcpyDeviceToDevice);
+  cudaMemcpy(mvZOldP, mvZNewP, centerGridSize, cudaMemcpyDeviceToDevice);
+  cudaMemcpy(mvZOldN, mvZNewN, centerGridSize, cudaMemcpyDeviceToDevice);
 }
 
 #endif
